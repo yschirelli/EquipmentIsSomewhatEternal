@@ -12,7 +12,8 @@ public class EquipmentIsEternal(
     ISptLogger<EquipmentIsEternal> logger,
     ModHelper modHelper,
     RaidStartPatch raidStartPatch,
-    RaidEndPatch raidEndPatch) : IOnLoad
+    RaidEndPatch raidEndPatch,
+    SaveProfilePatch saveProfilePatch) : IOnLoad
 {
     public Task OnLoadAsync(CancellationToken cancellationToken)
     {
@@ -20,9 +21,12 @@ public class EquipmentIsEternal(
         var config = modHelper.GetJsonDataFromFile<ModConfig>(modPath, "config.jsonc");
 
         RaidEndPatch.SetConfig(config);
+        SaveProfilePatch.SetConfig(config);
+        EquipmentSnapshot.SetBackupDir(Path.Combine(modPath, "backups"));
 
         raidStartPatch.Enable();
         raidEndPatch.Enable();
+        saveProfilePatch.Enable();
 
         logger.Success("EquipmentIsEternal loaded");
         logger.Info($"  OnlyRestoreInsured: {config.OnlyRestoreInsured}");
