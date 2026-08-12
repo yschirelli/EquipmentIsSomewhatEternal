@@ -12,7 +12,6 @@ public static class EquipmentSnapshot
     public record SnapshotData
     {
         public List<Item> EquipmentItems { get; init; } = [];
-        public List<Item> QuestItems { get; init; } = [];
         public List<string> InsuredItemIds { get; init; } = [];
     }
 
@@ -41,6 +40,17 @@ public static class EquipmentSnapshot
 
         result.Add(root);
         CollectChildren(allItems, root.Id!, result);
+        return result;
+    }
+
+    public static List<Item> GetItemAndChildrenByPrefix(List<Item> allItems, string parentId, string slotPrefix)
+    {
+        var result = new List<Item>();
+        foreach (var root in allItems.Where(i => i.ParentId == parentId && i.SlotId != null && i.SlotId.StartsWith(slotPrefix)))
+        {
+            result.Add(root);
+            CollectChildren(allItems, root.Id!, result);
+        }
         return result;
     }
 

@@ -84,17 +84,23 @@ public class RaidEndPatch : AbstractPatch
                 .Where(i => i.ParentId == equipmentId && i.SlotId == slot)
                 .ToList();
 
+            if (slotItems.Count == 0) continue;
+
+            var itemsToRestore = new List<Item>();
             foreach (var rootItem in slotItems)
             {
                 if (_config.OnlyRestoreInsured &&
                     !snapshot.InsuredItemIds.Contains(rootItem.Id!.ToString()!))
                     continue;
 
-                var itemTree = GetItemTree(snapshot.EquipmentItems, rootItem);
-                RemoveExistingSlotItems(inventory, equipmentId, slot);
-                inventory.AddRange(itemTree);
-                restoredCount += itemTree.Count;
+                itemsToRestore.AddRange(GetItemTree(snapshot.EquipmentItems, rootItem));
             }
+
+            if (itemsToRestore.Count == 0) continue;
+
+            RemoveExistingSlotItems(inventory, equipmentId, slot);
+            inventory.AddRange(itemsToRestore);
+            restoredCount += itemsToRestore.Count;
         }
 
         RestoreTier2Slot(inventory, snapshot, equipmentId, "ArmBand", _config.RestoreArmBand, ref restoredCount);
@@ -128,7 +134,10 @@ public class RaidEndPatch : AbstractPatch
             restoredCount += questItems.Count;
         }
 
-        _logger.Success($"EquipmentIsEternal: Restored {restoredCount} items for session {sessionId}");
+        if (restoredCount == 0 && _config.OnlyRestoreInsured)
+            _logger.Warning($"EquipmentIsEternal: Restored 0 items — OnlyRestoreInsured is enabled and no equipment items matched {snapshot.InsuredItemIds.Count} insured item IDs");
+        else
+            _logger.Success($"EquipmentIsEternal: Restored {restoredCount} items for session {sessionId}");
     }
 
     private static void RestoreTier2Slot(

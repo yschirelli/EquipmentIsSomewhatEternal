@@ -56,6 +56,9 @@ public class RaidStartPatch : AbstractPatch
                 EquipmentSnapshot.GetItemAndChildren(allItems, equipmentId, slot));
         }
 
+        equipmentItems.AddRange(
+            EquipmentSnapshot.GetItemAndChildrenByPrefix(allItems, equipmentId, "SpecialSlot"));
+
         var insuredIds = pmcData.InsuredItems?
             .Where(i => i.ItemId != null)
             .Select(i => i.ItemId!.ToString()!)
@@ -68,6 +71,6 @@ public class RaidStartPatch : AbstractPatch
         };
 
         EquipmentSnapshot.Store(sessionId.ToString()!, snapshot);
-        _logger.Info($"EquipmentIsEternal: Snapshotted {equipmentItems.Count} equipment items for session {sessionId}");
+        _logger.Info($"EquipmentIsEternal: Snapshotted {equipmentItems.Count} equipment items, {insuredIds.Count} insured item IDs for session {sessionId}");
     }
 }
