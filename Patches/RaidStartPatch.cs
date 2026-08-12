@@ -71,6 +71,11 @@ public class RaidStartPatch : AbstractPatch
         };
 
         EquipmentSnapshot.Store(sessionId.ToString()!, snapshot);
+
+        var profileBackupPath = EquipmentSnapshot.WriteProfileBackup(sessionId.ToString()!, profile!);
+        if (profileBackupPath != null)
+            _logger.Info($"EquipmentIsEternal: Profile backup written to {profileBackupPath}");
+
         _logger.Info($"EquipmentIsEternal: Snapshotted {equipmentItems.Count} equipment items, {insuredIds.Count} insured item IDs for session {sessionId}");
     }
 }

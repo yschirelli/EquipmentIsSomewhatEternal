@@ -58,8 +58,19 @@ public static class EquipmentSnapshot
         if (_backupDir == null) return null;
 
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        var path = System.IO.Path.Combine(_backupDir, $"{sessionId}_{timestamp}.json");
+        var path = System.IO.Path.Combine(_backupDir, $"{sessionId}_{timestamp}_snapshot.json");
         var json = JsonSerializer.Serialize(data, JsonUtil.JsonSerializerOptionsIndented);
+        File.WriteAllText(path, json);
+        return path;
+    }
+
+    public static string? WriteProfileBackup(string sessionId, object profile)
+    {
+        if (_backupDir == null) return null;
+
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        var path = System.IO.Path.Combine(_backupDir, $"{sessionId}_{timestamp}_profile.json");
+        var json = JsonSerializer.Serialize(profile, JsonUtil.JsonSerializerOptionsIndented);
         File.WriteAllText(path, json);
         return path;
     }
