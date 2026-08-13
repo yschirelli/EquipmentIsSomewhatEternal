@@ -20,7 +20,7 @@ public class SaveProfilePatch : AbstractPatch
     private static readonly string[] Tier1Slots =
     [
         "FirstPrimaryWeapon", "SecondPrimaryWeapon", "Holster",
-        "Pockets", "TacticalVest", "ArmorVest",
+        "Backpack", "Pockets", "TacticalVest", "ArmorVest",
         "Eyewear", "FaceCover", "Headwear", "Earpiece"
     ];
 
