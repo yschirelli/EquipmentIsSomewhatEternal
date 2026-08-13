@@ -20,7 +20,7 @@ public class RaidStartPatch : AbstractPatch
     private static readonly string[] SnapshotSlots =
     [
         "FirstPrimaryWeapon", "SecondPrimaryWeapon", "Holster",
-        "Pockets", "TacticalVest", "ArmorVest",
+        "Backpack", "Pockets", "TacticalVest", "ArmorVest",
         "Eyewear", "FaceCover", "Headwear", "Earpiece",
         "ArmBand", "Scabbard", "SecuredContainer"
     ];
