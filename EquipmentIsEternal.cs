@@ -35,6 +35,7 @@ public class EquipmentIsEternal(
         logger.Info($"  RestoreSpecialSlots: {config.RestoreSpecialSlots}");
         logger.Info($"  RestoreScabbard: {config.RestoreScabbard}");
         logger.Info($"  RestoreSecuredContainer: {config.RestoreSecuredContainer}");
+        logger.Info($"  DeduplicateItems: {config.DeduplicateItems}");
 
         return Task.CompletedTask;
     }

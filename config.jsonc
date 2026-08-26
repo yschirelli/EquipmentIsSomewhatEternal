@@ -9,5 +9,13 @@
   "OnlyRestoreInsured": false,
 
   // Tier 4: Preserve quest items collected during raid on death
-  "KeepQuestItems": false
+  "KeepQuestItems": false,
+
+  // Final verification: how to resolve duplicate item IDs after restore.
+  // Duplicates happen when an item is moved between containers in-raid (e.g. pocket ->
+  // secure container) and then restored from the pre-raid snapshot, leaving two copies
+  // of the same ID and causing "An item with the same key already exists" on raid end.
+  // true  (default): drop the duplicate, keeping the restored (snapshot) copy
+  // false: keep both, assigning a freshly generated ID to the conflicting item
+  "DeduplicateItems": true
 }

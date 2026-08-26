@@ -119,6 +119,74 @@ public class SaveProfilePatch : AbstractPatch
             _logger.Warning($"EquipmentIsEternal: Restored 0 items — OnlyRestoreInsured is enabled and no equipment items matched {snapshot.InsuredItemIds.Count} insured item IDs");
         else
             _logger.Success($"EquipmentIsEternal: Restored {restoredCount} items for session {sessionID} (pre-save)");
+
+        // Final verification: the restore above re-adds snapshot items by their original ID.
+        // If the same item was moved to a different slot in-raid (e.g. Pockets -> SecuredContainer),
+        // RemoveExistingSlotItems only cleared the original slot, so the in-raid copy survives
+        // under a different parent and the ID now appears twice. Left alone this throws
+        // "An item with the same key already exists" when the profile is indexed by ID.
+        ResolveDuplicateIds(inventory, sessionID);
+    }
+
+    /// <summary>
+    /// Ensures every item ID in the inventory is unique.
+    /// The first occurrence of an ID is authoritative (restore appends, so this is the
+    /// pre-existing in-raid copy); later occurrences are the conflicts.
+    /// DeduplicateItems=true drops them, false re-keys them onto a fresh ID.
+    /// </summary>
+    private static void ResolveDuplicateIds(List<Item> inventory, MongoId sessionID)
+    {
+        var seen = new HashSet<string>();
+        var conflicts = new List<Item>();
+
+        foreach (var item in inventory)
+        {
+            var id = item.Id.ToString();
+            if (id == null) continue;
+            if (!seen.Add(id)) conflicts.Add(item);
+        }
+
+        if (conflicts.Count == 0) return;
+
+        if (_config.DeduplicateItems)
+        {
+            // Remove by reference so only the duplicate entries go, not every item sharing the ID.
+            var doomed = new HashSet<Item>(conflicts, ReferenceEqualityComparer.Instance);
+            var removed = inventory.RemoveAll(doomed.Contains);
+            _logger.Warning(
+                $"EquipmentIsEternal: Removed {removed} duplicate item(s) for session {sessionID} " +
+                $"(DeduplicateItems=true)");
+            return;
+        }
+
+        // Keep both copies: give each conflict a fresh ID.
+        //
+        // Children are linked by ParentId, which is ambiguous while two items share an ID —
+        // there is no way to tell from the data which instance a given child belongs to.
+        // Position disambiguates it: the restore appends snapshot items to the end, so any
+        // child already present BEFORE the conflicting entry belongs to the earlier (in-raid)
+        // instance and must keep pointing at it. Only children that arrived with the restored
+        // copy — i.e. after it in the list — follow the new ID.
+        var rekeyed = 0;
+        foreach (var item in conflicts)
+        {
+            var oldId = item.Id.ToString()!;
+            var newId = new MongoId();
+            var conflictIndex = inventory.IndexOf(item);
+
+            for (var i = conflictIndex + 1; i < inventory.Count; i++)
+            {
+                if (inventory[i].ParentId?.ToString() == oldId)
+                    inventory[i].ParentId = newId;
+            }
+
+            item.Id = newId;
+            rekeyed++;
+        }
+
+        _logger.Warning(
+            $"EquipmentIsEternal: Re-keyed {rekeyed} conflicting item(s) for session {sessionID} " +
+            $"(DeduplicateItems=false)");
     }
 
     private static void RestoreTier2Slot(

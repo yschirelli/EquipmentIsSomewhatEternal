@@ -8,4 +8,5 @@ public record ModConfig
     public bool RestoreSecuredContainer { get; init; }
     public bool OnlyRestoreInsured { get; init; }
     public bool KeepQuestItems { get; init; }
+    public bool DeduplicateItems { get; init; } = true;
 }
