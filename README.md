@@ -100,3 +100,10 @@ Configuration can be changed via three methods:
 | `KeepRigItems` | bool | `true` | Retain pre-raid items inside tactical rig. |
 | `OnlyRestoreInsured` | bool | `false` | Only restore items that were insured prior to raid. |
 | `DeduplicateItems` | bool | `true` | Ensures no duplicate IDs occur when merging snapshot with post-raid profile. |
+
+---
+
+## Credits
+
+- **ScrewTSW**: Original author and creator of **EquipmentIsEternal**, the foundation this mod is built upon.
+
