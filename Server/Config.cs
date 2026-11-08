@@ -14,10 +14,6 @@ public enum DifficultyPreset
 
 public record ModConfig
 {
-    // Web UI settings
-    public bool EnableWebUi { get; init; } = true;
-    public int WebUiPort { get; init; } = 6970;
-
     // Preset selector
     public DifficultyPreset Preset { get; init; } = DifficultyPreset.Easy;
 
@@ -81,7 +77,7 @@ public record ModConfig
 public static class ConfigStore
 {
     private static readonly Lock SyncLock = new();
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    public static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
@@ -90,6 +86,7 @@ public static class ConfigStore
         Converters = { new JsonStringEnumConverter() }
     };
 
+    public static string ModDirectory { get; private set; } = string.Empty;
     private static string? _configFilePath;
     private static ModConfig _cached = new();
 
@@ -97,6 +94,7 @@ public static class ConfigStore
     {
         lock (SyncLock)
         {
+            ModDirectory = modPath;
             _configFilePath = Path.Combine(modPath, "config.jsonc");
             _cached = initial.NormalizePreset();
         }

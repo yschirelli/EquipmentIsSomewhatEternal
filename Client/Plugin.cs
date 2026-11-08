@@ -47,8 +47,6 @@ public class Plugin : BaseUnityPlugin
     private ConfigEntry<bool> _restoreSecuredContainer = null!;
     private ConfigEntry<bool> _deduplicateItems = null!;
 
-    private bool _enableWebUi = true;
-    private int _webUiPort = 6970;
     private bool _suppressEvents;
     private string? _serverConfigPath;
     private FileSystemWatcher? _watcher;
@@ -225,9 +223,6 @@ public class Plugin : BaseUnityPlugin
             _suppressEvents = true;
             try
             {
-                if (dict.TryGetValue("EnableWebUi", out var webUi) && webUi is bool bWeb) _enableWebUi = bWeb;
-                if (dict.TryGetValue("WebUiPort", out var port) && port != null) _webUiPort = Convert.ToInt32(port, CultureInfo.InvariantCulture);
-
                 if (dict.TryGetValue("Preset", out var pObj) && pObj is string pStr && Enum.TryParse<DifficultyPreset>(pStr, true, out var parsedPreset))
                     _preset.Value = parsedPreset;
 
@@ -290,8 +285,6 @@ public class Plugin : BaseUnityPlugin
 
             var payload = new Dictionary<string, object>
             {
-                ["EnableWebUi"] = _enableWebUi,
-                ["WebUiPort"] = _webUiPort,
                 ["Preset"] = _preset.Value.ToString(),
                 ["DurabilityLossPercent"] = Math.Round(_durabilityLossPercent.Value, 1),
                 ["MinDurabilityFloorPercent"] = Math.Round(_minDurabilityFloorPercent.Value, 1),

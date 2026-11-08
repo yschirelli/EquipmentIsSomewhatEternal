@@ -30,12 +30,7 @@ public class EquipmentIsEternal(
         raidEndPatch.Enable();
         saveProfilePatch.Enable();
 
-        if (config.EnableWebUi)
-        {
-            WebConfigServer.Start(modPath, config.WebUiPort, logger);
-        }
-
-        logger.Success($"EquipmentIsSomewhatEternal loaded (Preset: {config.Preset}, DurabilityLoss: {config.DurabilityLossPercent}%)");
+        logger.Success($"EquipmentIsSomewhatEternal loaded (Preset: {config.Preset}, DurabilityLoss: {config.DurabilityLossPercent}%). SIC page registered at /equipment-is-somewhat-eternal");
         return Task.CompletedTask;
     }
 }

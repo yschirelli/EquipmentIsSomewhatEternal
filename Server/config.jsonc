@@ -1,7 +1,5 @@
 {
-  // Local Web Config Page (http://127.0.0.1:6970)
-  "EnableWebUi": true,
-  "WebUiPort": 6970,
+  // Configured natively in the SPT Server Information Center (SIC) at https://127.0.0.1:6969/ under MOD PAGES
 
   // Preset: "Easy", "Medium", "Hard", or "Custom"
   "Preset": "Easy",
