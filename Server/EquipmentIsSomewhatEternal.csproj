@@ -37,10 +37,15 @@
     </ItemGroup>
   </Target>
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="SPTarkov.Common" Version="4.1.2" />
     <PackageReference Include="SPTarkov.DI" Version="4.1.2" />
     <PackageReference Include="SPTarkov.Server.Core" Version="4.1.2" />
     <PackageReference Include="SPTarkov.Reflection" Version="4.1.2" />
+    <Reference Include="SPTarkov.Server.Web">
+      <HintPath>lib\SPTarkov.Server.Web.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <None Include="config.jsonc" CopyToOutputDirectory="PreserveNewest" />
