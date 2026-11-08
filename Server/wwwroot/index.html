@@ -3,590 +3,618 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Equipment Is Somewhat Eternal — SPT 4.1.6 Config</title>
+  <title>Equipment Is Somewhat Eternal</title>
   <style>
     :root {
-      color-scheme: dark;
-      --brand-color: #d4a74a;
-      --bg-color: #111315;
-      --panel-bg: #1a1d21;
-      --border-color: #2d3239;
-      --text-main: #ebedf0;
-      --text-muted: #9aa2ad;
-      --success-color: #4caf50;
-      --danger-color: #e5534b;
+      --bg: #090a0f;
+      --card: #12151c;
+      --card-hover: #181d26;
+      --border: #232936;
+      --border-active: #e5b358;
+      --accent: #e5b358;
+      --text: #f0f2f5;
+      --muted: #8a94a6;
+      --green: #4ade80;
     }
 
-    html {
-      scrollbar-color: var(--brand-color) var(--panel-bg);
-      scrollbar-width: thin;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      padding: 2rem 1rem;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 1rem;
-      line-height: 1.5;
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      accent-color: var(--brand-color);
+      padding: 2.5rem 1rem 6rem;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.45;
     }
 
-    ::selection {
-      background-color: var(--brand-color);
-      color: #111315;
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
     }
 
-    .container {
-      max-width: 780px;
-      margin-inline: auto;
+    /* Top bar */
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--accent); }
+    .badge {
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      background: var(--border);
+      border-radius: 999px;
+      color: var(--muted);
     }
 
-    header {
-      margin-block-end: 1.5rem;
-      border-block-end: 1px solid var(--border-color);
-      padding-block-end: 1rem;
-    }
-
+    /* Header */
     h1 {
-      margin: 0 0 0.25rem 0;
-      font-size: 1.6rem;
-      color: var(--brand-color);
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+      color: #fff;
     }
-
-    .subtitle {
-      margin: 0;
-      color: var(--text-muted);
+    .tagline {
+      margin: 0 0 2rem;
+      color: var(--muted);
       font-size: 0.95rem;
     }
 
-    fieldset {
-      background: var(--panel-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 1.25rem;
-      margin-block-end: 1.5rem;
+    /* Preset cards */
+    .section-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+      font-weight: 600;
     }
 
-    legend {
-      font-weight: 700;
-      color: var(--brand-color);
-      padding-inline: 0.5rem;
-      font-size: 1.05rem;
-    }
-
-    .preset-grid {
+    .presets-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 640px) {
+      .presets-row { grid-template-columns: 1fr 1fr; }
     }
 
-    .choice-card {
+    .preset-card {
+      position: relative;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 0.9rem;
+      cursor: pointer;
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
-      padding: 0.85rem;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      cursor: pointer;
-      min-height: 48px;
-      box-sizing: border-box;
-      transition: border-color 0.15s ease, background-color 0.15s ease;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+    }
+    .preset-card:hover {
+      border-color: #3b4457;
+      background: var(--card-hover);
+    }
+    .preset-card input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .preset-card:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(229, 179, 88, 0.08);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .p-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+    }
+    .preset-card:has(input:checked) .p-name {
+      color: var(--accent);
+    }
+    .p-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.35;
     }
 
-    .choice-card:hover {
-      border-color: var(--brand-color);
+    /* Panel */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
     }
 
-    label:has(:checked).choice-card {
-      border-color: var(--brand-color);
-      background-color: rgba(212, 167, 74, 0.12);
+    .slider-box {
+      margin-bottom: 1.5rem;
     }
-
-    .choice-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-weight: 600;
-    }
-
-    .choice-desc {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    .form-group {
-      margin-block-end: 1.25rem;
-    }
-
-    .form-group:last-child {
-      margin-block-end: 0;
-    }
-
-    .slider-label {
+    .slider-box:last-child { margin-bottom: 0; }
+    .slider-head {
       display: flex;
       justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.4rem;
+    }
+    .slider-label {
       font-weight: 600;
-      margin-block-end: 0.35rem;
+      font-size: 0.95rem;
     }
-
-    .hint {
-      display: block;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-block-start: 0.2rem;
+    .slider-val {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
     }
-
+    .slider-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin: 0.2rem 0 0.5rem;
+    }
     input[type="range"] {
       width: 100%;
-      min-height: 36px;
+      height: 6px;
+      background: #232936;
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+      accent-color: var(--accent);
       cursor: pointer;
     }
 
-    .toggle-grid {
+    /* Checkbox list */
+    .check-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 0.75rem;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
     }
-
-    .toggle-item {
+    @media (max-width: 580px) {
+      .check-grid { grid-template-columns: 1fr; }
+    }
+    .check-item {
       display: flex;
       align-items: center;
       gap: 0.65rem;
       padding: 0.65rem 0.85rem;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.88rem;
       cursor: pointer;
-      min-height: 48px;
-      box-sizing: border-box;
+      user-select: none;
+      transition: border-color 0.15s;
+    }
+    .check-item:hover { border-color: #3b4457; }
+    .check-item input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    .check-item:has(input:checked) {
+      border-color: rgba(229, 179, 88, 0.4);
+      background: rgba(229, 179, 88, 0.04);
     }
 
-    label:has(:checked).toggle-item {
-      border-color: var(--brand-color);
-      background-color: rgba(212, 167, 74, 0.08);
+    /* Collapsible Details */
+    details {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    summary {
+      padding: 1rem 1.25rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: color 0.15s;
+    }
+    summary:hover { color: var(--text); }
+    details[open] summary {
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    .details-body {
+      padding: 1.25rem;
     }
 
-    input:focus-visible,
-    button:focus-visible {
-      outline: 3px solid var(--brand-color);
-      outline-offset: 2px;
+    /* Bottom sticky bar */
+    .save-bar {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(760px, calc(100% - 2rem));
+      background: #181d26;
+      border: 1px solid #2d3648;
+      border-radius: 12px;
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.7);
+      z-index: 100;
     }
-
-    input:not(input[type="range"]):user-invalid {
-      border-color: var(--danger-color);
-    }
-
-    .actions {
+    .save-status {
+      font-size: 0.88rem;
+      color: var(--muted);
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      position: sticky;
-      bottom: 1rem;
-      background: var(--panel-bg);
-      border: 1px solid var(--border-color);
-      padding: 0.9rem 1.25rem;
-      border-radius: 8px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      gap: 0.5rem;
     }
-
-    button[type="submit"] {
-      background-color: var(--brand-color);
-      color: #111315;
-      font-weight: 700;
-      font-size: 1rem;
-      border: none;
-      border-radius: 6px;
-      padding: 0.75rem 1.5rem;
-      min-height: 48px;
-      cursor: pointer;
-    }
-
-    button[type="submit"]:disabled {
-      opacity: 0.6;
-      cursor: wait;
-    }
-
-    #status-banner {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-    }
-
-    #status-banner.saved {
-      color: var(--success-color);
+    .save-status.ok {
+      color: var(--green);
       font-weight: 600;
     }
-
-    /* Fallback for older browsers without accent-color */
-    @supports not (accent-color: var(--brand-color)) {
-      form input[type="checkbox"].visually-hidden {
-        position: absolute !important;
-        clip-path: inset(50%) !important;
-        overflow: hidden !important;
-        width: 1px !important;
-        height: 1px !important;
-        margin: -1px !important;
-        padding: 0 !important;
-        border: 0 !important;
-        white-space: nowrap !important;
-      }
-
-      input[type="range"] {
-        -webkit-appearance: none;
-        appearance: none;
-        background: transparent;
-      }
-
-      input[type="range"]::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 8px;
-        background: linear-gradient(to right, var(--brand-color) var(--progress, 0%), #ccc var(--progress, 0%));
-        border-radius: 4px;
-      }
-
-      input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        height: 16px;
-        width: 16px;
-        border-radius: 50%;
-        background: var(--brand-color);
-        cursor: pointer;
-        margin-top: -4px;
-      }
+    .btn-save {
+      background: var(--accent);
+      color: #0b0c10;
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 1.5rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.05s;
     }
+    .btn-save:hover { opacity: 0.92; }
+    .btn-save:active { transform: scale(0.98); }
+    .btn-save:disabled { opacity: 0.5; cursor: wait; }
   </style>
 </head>
 <body>
-  <main class="container">
-    <header>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-block-end: 0.75rem;">
-        <a href="/" target="_top" style="color: var(--brand-color); text-decoration: none; font-size: 0.9rem; font-weight: 500; display: inline-flex; align-items: center; gap: 0.4rem;">
-          <span aria-hidden="true">&larr;</span> Back to Server Information Center
-        </a>
-        <span style="font-size: 0.8rem; color: var(--text-muted); background: var(--panel-bg); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">SPT 4.1.6</span>
+  <div class="wrap">
+    <div class="top-nav">
+      <a href="/" target="_top" class="back-link">&larr; Server Information Center</a>
+      <span class="badge">SPT 4.1.6</span>
+    </div>
+
+    <h1>Equipment Is Somewhat Eternal</h1>
+    <p class="tagline">Death retention presets, durability wear, and container cargo settings.</p>
+
+    <form id="cfg-form">
+      <!-- 1. Presets -->
+      <div class="section-title">Difficulty Presets</div>
+      <div class="presets-row">
+        <label class="preset-card">
+          <input type="radio" name="Preset" value="Easy">
+          <span class="p-name">Easy</span>
+          <span class="p-desc">Keep all gear &amp; inventory. 0% durability loss.</span>
+        </label>
+
+        <label class="preset-card">
+          <input type="radio" name="Preset" value="Medium">
+          <span class="p-name">Medium</span>
+          <span class="p-desc">Keep pre-raid gear. 15% durability penalty.</span>
+        </label>
+
+        <label class="preset-card">
+          <input type="radio" name="Preset" value="Hard">
+          <span class="p-name">Hard</span>
+          <span class="p-desc">Lose backpack/rig loot. 30% durability penalty.</span>
+        </label>
+
+        <label class="preset-card">
+          <input type="radio" name="Preset" value="Custom">
+          <span class="p-name">Custom</span>
+          <span class="p-desc">Freely customize all sliders and rules below.</span>
+        </label>
       </div>
-      <h1>Equipment Is Somewhat Eternal</h1>
-      <p class="subtitle">Death Retention, Durability Penalty &amp; Container Filter Configuration</p>
-    </header>
 
-    <form id="config-form" action="/equipment-is-somewhat-eternal/api/config" method="POST">
-      <fieldset>
-        <legend>1. Difficulty Preset</legend>
-        <div class="preset-grid">
-          <label class="choice-card" for="preset-easy">
-            <span class="choice-header">
-              <input type="radio" id="preset-easy" name="Preset" value="Easy" checked>
-              <span>Easy</span>
-            </span>
-            <span class="choice-desc">Original behavior: keep all pre-raid gear &amp; container items at 0% durability penalty.</span>
-          </label>
-
-          <label class="choice-card" for="preset-medium">
-            <span class="choice-header">
-              <input type="radio" id="preset-medium" name="Preset" value="Medium">
-              <span>Medium</span>
-            </span>
-            <span class="choice-desc">Keep pre-raid gear &amp; container items, lose in-raid loot, and take a 15% durability hit.</span>
-          </label>
-
-          <label class="choice-card" for="preset-hard">
-            <span class="choice-header">
-              <input type="radio" id="preset-hard" name="Preset" value="Hard">
-              <span>Hard</span>
-            </span>
-            <span class="choice-desc">Lose items inside Backpack, Pockets &amp; Rig (except whitelisted categories) + 30% durability hit.</span>
-          </label>
-
-          <label class="choice-card" for="preset-custom">
-            <span class="choice-header">
-              <input type="radio" id="preset-custom" name="Preset" value="Custom">
-              <span>Custom</span>
-            </span>
-            <span class="choice-desc">Customize every durability slider, container rule, and item category override freely.</span>
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>2. Durability &amp; Resource Penalties</legend>
-
-        <div class="form-group">
-          <label class="slider-label" for="DurabilityLossPercent">
-            <span>Equipment &amp; Weapon Durability Loss</span>
-            <output id="DurabilityLossPercent-val" for="DurabilityLossPercent">0%</output>
-          </label>
-          <input type="range" id="DurabilityLossPercent" name="DurabilityLossPercent" min="0" max="100" step="1" value="0" aria-describedby="durability-loss-help">
-          <span id="durability-loss-help" class="hint">Percentage of max durability subtracted from restored weapons, armor, helmets, and plates on death.</span>
+      <!-- 2. Core Penalties -->
+      <div class="section-title">Durability Penalties</div>
+      <div class="panel">
+        <div class="slider-box">
+          <div class="slider-head">
+            <span class="slider-label">Durability Loss on Death</span>
+            <span class="slider-val" id="loss-val">0%</span>
+          </div>
+          <p class="slider-sub">Percent burned from weapons, armor, helmets, and plates upon restore.</p>
+          <input type="range" id="DurabilityLossPercent" min="0" max="100" step="1" value="0">
         </div>
 
-        <div class="form-group">
-          <label class="slider-label" for="MinDurabilityFloorPercent">
-            <span>Minimum Durability Floor</span>
-            <output id="MinDurabilityFloorPercent-val" for="MinDurabilityFloorPercent">10%</output>
-          </label>
-          <input type="range" id="MinDurabilityFloorPercent" name="MinDurabilityFloorPercent" min="0" max="100" step="1" value="10" aria-describedby="durability-floor-help">
-          <span id="durability-floor-help" class="hint">Stops repeated deaths from reducing equipment below this % of its max durability.</span>
+        <div class="slider-box">
+          <div class="slider-head">
+            <span class="slider-label">Minimum Durability Floor</span>
+            <span class="slider-val" id="floor-val">10%</span>
+          </div>
+          <p class="slider-sub">Safety limit: gear won't degrade below this % of maximum durability.</p>
+          <input type="range" id="MinDurabilityFloorPercent" min="0" max="100" step="1" value="10">
         </div>
 
-        <div class="form-group">
-          <label class="slider-label" for="ConsumableResourceLossPercent">
-            <span>Medkit &amp; Provision Resource Drain</span>
-            <output id="ConsumableResourceLossPercent-val" for="ConsumableResourceLossPercent">0%</output>
-          </label>
-          <input type="range" id="ConsumableResourceLossPercent" name="ConsumableResourceLossPercent" min="0" max="100" step="1" value="0" aria-describedby="resource-loss-help">
-          <span id="resource-loss-help" class="hint">Optional % drained from kept multi-use medkits (Salewa/Grizzly/Surv12) and provisions.</span>
-        </div>
-
-        <div class="toggle-grid">
-          <label class="toggle-item" for="AffectMaxDurability">
-            <input type="checkbox" id="AffectMaxDurability" name="AffectMaxDurability">
-            <span>Also Burn Max Durability (Simulate Repair Wear)</span>
+        <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+          <label class="check-item" style="display: inline-flex;">
+            <input type="checkbox" id="AffectMaxDurability">
+            <span>Also burn maximum durability (permanent repair wear)</span>
           </label>
         </div>
-      </fieldset>
+      </div>
 
-      <fieldset>
-        <legend>3. Container Contents (Keep Pre-Raid Items Inside)</legend>
-        <div class="toggle-grid">
-          <label class="toggle-item" for="KeepBackpackItems">
-            <input type="checkbox" id="KeepBackpackItems" name="KeepBackpackItems" checked>
-            <span>Keep Items Inside Backpack</span>
+      <!-- 3. Container rules -->
+      <div class="section-title">Pre-Raid Container Inventory</div>
+      <div class="panel">
+        <p class="slider-sub" style="margin-top: 0; margin-bottom: 1rem;">Choose which containers keep the items you entered the raid with.</p>
+        <div class="check-grid">
+          <label class="check-item">
+            <input type="checkbox" id="KeepBackpackItems">
+            <span>Keep items inside Backpack</span>
           </label>
-          <label class="toggle-item" for="KeepPocketItems">
-            <input type="checkbox" id="KeepPocketItems" name="KeepPocketItems" checked>
-            <span>Keep Items Inside Pockets</span>
+          <label class="check-item">
+            <input type="checkbox" id="KeepPocketItems">
+            <span>Keep items inside Pockets</span>
           </label>
-          <label class="toggle-item" for="KeepRigItems">
-            <input type="checkbox" id="KeepRigItems" name="KeepRigItems" checked>
-            <span>Keep Items Inside Tactical Rig</span>
+          <label class="check-item">
+            <input type="checkbox" id="KeepRigItems">
+            <span>Keep items inside Tactical Rig</span>
           </label>
         </div>
-      </fieldset>
+      </div>
 
-      <fieldset>
-        <legend>4. Category Whitelist (Kept Even When Container Loses Contents)</legend>
-        <div class="toggle-grid">
-          <label class="toggle-item" for="KeepMeds">
-            <input type="checkbox" id="KeepMeds" name="KeepMeds">
-            <span>Keep Meds &amp; Stims</span>
-          </label>
-          <label class="toggle-item" for="KeepProvisions">
-            <input type="checkbox" id="KeepProvisions" name="KeepProvisions">
-            <span>Keep Food &amp; Drink</span>
-          </label>
-          <label class="toggle-item" for="KeepMagazines">
-            <input type="checkbox" id="KeepMagazines" name="KeepMagazines">
-            <span>Keep Magazines</span>
-          </label>
-          <label class="toggle-item" for="KeepAmmo">
-            <input type="checkbox" id="KeepAmmo" name="KeepAmmo">
-            <span>Keep Loose &amp; Mag Ammo</span>
-          </label>
-          <label class="toggle-item" for="KeepGrenades">
-            <input type="checkbox" id="KeepGrenades" name="KeepGrenades">
-            <span>Keep Grenades</span>
-          </label>
-          <label class="toggle-item" for="KeepKeys">
-            <input type="checkbox" id="KeepKeys" name="KeepKeys" checked>
-            <span>Keep Keys &amp; Keycards</span>
-          </label>
-          <label class="toggle-item" for="KeepMoney">
-            <input type="checkbox" id="KeepMoney" name="KeepMoney">
-            <span>Keep Money</span>
-          </label>
-          <label class="toggle-item" for="KeepBarterItems">
-            <input type="checkbox" id="KeepBarterItems" name="KeepBarterItems">
-            <span>Keep Barter Items</span>
-          </label>
+      <!-- 4. Category overrides -->
+      <details>
+        <summary>
+          <span>Category Whitelist (Always Kept on Death)</span>
+          <span style="font-size: 0.75rem;">Overrides container loss &darr;</span>
+        </summary>
+        <div class="details-body">
+          <p class="slider-sub" style="margin-top:0; margin-bottom: 1rem;">These items are saved even if their container was set to be lost above.</p>
+          <div class="check-grid">
+            <label class="check-item">
+              <input type="checkbox" id="KeepKeys">
+              <span>Keys &amp; Keycards</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="KeepMeds">
+              <span>Medical Supplies &amp; Stims</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="KeepAmmo">
+              <span>Loose Ammo &amp; Stacks</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="KeepMagazines">
+              <span>Loaded Magazines</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="KeepProvisions">
+              <span>Food &amp; Drink</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="KeepGrenades">
+              <span>Grenades &amp; Throwables</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="KeepMoney">
+              <span>Roubles, Dollars, Euros</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="KeepBarterItems">
+              <span>Barter &amp; Crafting Items</span>
+            </label>
+          </div>
         </div>
-      </fieldset>
+      </details>
 
-      <fieldset>
-        <legend>5. Special Slots &amp; Insurance Rules</legend>
-        <div class="toggle-grid">
-          <label class="toggle-item" for="OnlyRestoreInsured">
-            <input type="checkbox" id="OnlyRestoreInsured" name="OnlyRestoreInsured">
-            <span>Only Restore Insured Gear</span>
-          </label>
-          <label class="toggle-item" for="KeepQuestItems">
-            <input type="checkbox" id="KeepQuestItems" name="KeepQuestItems">
-            <span>Keep In-Raid Quest Items</span>
-          </label>
-          <label class="toggle-item" for="RestoreArmBand">
-            <input type="checkbox" id="RestoreArmBand" name="RestoreArmBand">
-            <span>Restore Armband Snapshot</span>
-          </label>
-          <label class="toggle-item" for="RestoreSpecialSlots">
-            <input type="checkbox" id="RestoreSpecialSlots" name="RestoreSpecialSlots">
-            <span>Restore Special Slots Snapshot</span>
-          </label>
-          <label class="toggle-item" for="RestoreScabbard">
-            <input type="checkbox" id="RestoreScabbard" name="RestoreScabbard">
-            <span>Restore Scabbard Snapshot</span>
-          </label>
-          <label class="toggle-item" for="RestoreSecuredContainer">
-            <input type="checkbox" id="RestoreSecuredContainer" name="RestoreSecuredContainer">
-            <span>Restore Secure Container Snapshot</span>
-          </label>
-          <label class="toggle-item" for="DeduplicateItems">
-            <input type="checkbox" id="DeduplicateItems" name="DeduplicateItems" checked>
-            <span>Deduplicate Moved Items</span>
-          </label>
+      <!-- 5. Advanced / Special slots -->
+      <details>
+        <summary>
+          <span>Advanced Rules &amp; Special Slots</span>
+          <span style="font-size: 0.75rem;">Insurance &amp; Snapshots &darr;</span>
+        </summary>
+        <div class="details-body">
+          <div class="slider-box" style="margin-bottom: 1.25rem;">
+            <div class="slider-head">
+              <span class="slider-label">Meds &amp; Provisions Resource Drain</span>
+              <span class="slider-val" id="drain-val">0%</span>
+            </div>
+            <p class="slider-sub">% drained from multi-use medical kits (Salewa, Grizzly) and water rations on death.</p>
+            <input type="range" id="ConsumableResourceLossPercent" min="0" max="100" step="1" value="0">
+          </div>
+
+          <div class="check-grid">
+            <label class="check-item">
+              <input type="checkbox" id="OnlyRestoreInsured">
+              <span>Only restore items covered by insurance</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="KeepQuestItems">
+              <span>Keep in-raid quest items</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="RestoreArmBand">
+              <span>Restore Armband snapshot</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="RestoreSpecialSlots">
+              <span>Restore Special Slots (Rangefinder, Markers)</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="RestoreScabbard">
+              <span>Restore Melee weapon snapshot</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="RestoreSecuredContainer">
+              <span>Restore Secure Container snapshot</span>
+            </label>
+          </div>
         </div>
-      </fieldset>
+      </details>
 
-      <div class="actions">
-        <span id="status-banner" aria-live="polite">Ready — changes apply live on next raid end.</span>
-        <button type="submit" id="save-btn">Save changes</button>
+      <!-- Sticky Save Bar -->
+      <div class="save-bar">
+        <span class="save-status" id="status-msg">Ready &mdash; applies next raid</span>
+        <button type="submit" class="btn-save" id="btn-save">Save Settings</button>
       </div>
     </form>
-  </main>
+  </div>
 
   <script>
-    const form = document.getElementById('config-form');
-    const saveBtn = document.getElementById('save-btn');
-    const statusBanner = document.getElementById('status-banner');
-    let currentConfig = {};
-    let isUpdatingUi = false;
+    const API = '/equipment-is-somewhat-eternal/api/config';
+    const form = document.getElementById('cfg-form');
+    const saveBtn = document.getElementById('btn-save');
+    const statusMsg = document.getElementById('status-msg');
 
-    const sliderIds = ['DurabilityLossPercent', 'MinDurabilityFloorPercent', 'ConsumableResourceLossPercent'];
-    const checkboxIds = [
-      'AffectMaxDurability',
-      'KeepBackpackItems', 'KeepPocketItems', 'KeepRigItems',
-      'KeepMeds', 'KeepProvisions', 'KeepAmmo', 'KeepMagazines', 'KeepGrenades', 'KeepKeys', 'KeepMoney', 'KeepBarterItems',
-      'OnlyRestoreInsured', 'KeepQuestItems', 'RestoreArmBand', 'RestoreSpecialSlots', 'RestoreScabbard', 'RestoreSecuredContainer', 'DeduplicateItems'
+    let isInternalUpdate = false;
+    let baseConfig = {};
+
+    const sliders = [
+      { id: 'DurabilityLossPercent', out: 'loss-val' },
+      { id: 'MinDurabilityFloorPercent', out: 'floor-val' },
+      { id: 'ConsumableResourceLossPercent', out: 'drain-val' }
     ];
 
-    function updateSliderDisplay(id) {
-      const el = document.getElementById(id);
-      const out = document.getElementById(`${id}-val`);
-      if (el && out) {
-        out.textContent = `${el.value}%`;
-        el.style.setProperty('--progress', `${el.value}%`);
-      }
+    const checkboxes = [
+      'AffectMaxDurability',
+      'KeepBackpackItems', 'KeepPocketItems', 'KeepRigItems',
+      'KeepKeys', 'KeepMeds', 'KeepAmmo', 'KeepMagazines', 'KeepProvisions', 'KeepGrenades', 'KeepMoney', 'KeepBarterItems',
+      'OnlyRestoreInsured', 'KeepQuestItems', 'RestoreArmBand', 'RestoreSpecialSlots', 'RestoreScabbard', 'RestoreSecuredContainer'
+    ];
+
+    function updateSlider(s) {
+      const el = document.getElementById(s.id);
+      const out = document.getElementById(s.out);
+      if (el && out) out.textContent = `${el.value}%`;
     }
 
-    function applyPresetToControls(preset) {
-      isUpdatingUi = true;
-      if (preset === 'Easy') {
+    sliders.forEach(s => {
+      const el = document.getElementById(s.id);
+      el.addEventListener('input', () => {
+        updateSlider(s);
+        if (!isInternalUpdate) selectPreset('Custom');
+      });
+    });
+
+    checkboxes.forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        if (!isInternalUpdate) selectPreset('Custom');
+      });
+    });
+
+    function selectPreset(name) {
+      const r = document.querySelector(`input[name="Preset"][value="${name}"]`);
+      if (r) r.checked = true;
+    }
+
+    function applyPresetValues(p) {
+      isInternalUpdate = true;
+      if (p === 'Easy') {
         document.getElementById('DurabilityLossPercent').value = 0;
         document.getElementById('KeepBackpackItems').checked = true;
         document.getElementById('KeepPocketItems').checked = true;
         document.getElementById('KeepRigItems').checked = true;
-      } else if (preset === 'Medium') {
+      } else if (p === 'Medium') {
         document.getElementById('DurabilityLossPercent').value = 15;
         document.getElementById('KeepBackpackItems').checked = true;
         document.getElementById('KeepPocketItems').checked = true;
         document.getElementById('KeepRigItems').checked = true;
-      } else if (preset === 'Hard') {
+      } else if (p === 'Hard') {
         document.getElementById('DurabilityLossPercent').value = 30;
         document.getElementById('KeepBackpackItems').checked = false;
         document.getElementById('KeepPocketItems').checked = false;
         document.getElementById('KeepRigItems').checked = false;
       }
-      sliderIds.forEach(updateSliderDisplay);
-      isUpdatingUi = false;
+      sliders.forEach(updateSlider);
+      isInternalUpdate = false;
     }
 
-    document.querySelectorAll('input[name="Preset"]').forEach((radio) => {
-      radio.addEventListener('change', (e) => {
-        if (e.target.checked) applyPresetToControls(e.target.value);
-      });
-    });
-
-    ['DurabilityLossPercent', 'KeepBackpackItems', 'KeepPocketItems', 'KeepRigItems'].forEach((id) => {
-      const el = document.getElementById(id);
-      el.addEventListener('input', () => {
-        updateSliderDisplay(id);
-        if (!isUpdatingUi) {
-          document.getElementById('preset-custom').checked = true;
+    document.querySelectorAll('input[name="Preset"]').forEach(r => {
+      r.addEventListener('change', (e) => {
+        if (e.target.checked && e.target.value !== 'Custom') {
+          applyPresetValues(e.target.value);
         }
       });
     });
 
-    ['MinDurabilityFloorPercent', 'ConsumableResourceLossPercent'].forEach((id) => {
-      document.getElementById(id).addEventListener('input', () => updateSliderDisplay(id));
-    });
+    function populate(data) {
+      isInternalUpdate = true;
+      baseConfig = data;
+      selectPreset(data.Preset || 'Easy');
 
-    function populateForm(cfg) {
-      isUpdatingUi = true;
-      currentConfig = cfg;
-      const presetRadio = document.querySelector(`input[name="Preset"][value="${cfg.Preset || 'Easy'}"]`);
-      if (presetRadio) presetRadio.checked = true;
-
-      sliderIds.forEach((id) => {
-        if (typeof cfg[id] === 'number') {
-          document.getElementById(id).value = cfg[id];
-          updateSliderDisplay(id);
+      sliders.forEach(s => {
+        if (typeof data[s.id] === 'number') {
+          document.getElementById(s.id).value = data[s.id];
+          updateSlider(s);
         }
       });
 
-      checkboxIds.forEach((id) => {
-        if (typeof cfg[id] === 'boolean') {
-          document.getElementById(id).checked = cfg[id];
+      checkboxes.forEach(id => {
+        if (typeof data[id] === 'boolean') {
+          document.getElementById(id).checked = data[id];
         }
       });
-      isUpdatingUi = false;
+      isInternalUpdate = false;
     }
 
-    const API_ENDPOINT = '/equipment-is-somewhat-eternal/api/config';
-
-    async function loadConfig() {
+    async function load() {
       try {
-        const res = await fetch(API_ENDPOINT);
-        if (res.ok) {
-          const data = await res.json();
-          populateForm(data);
-        }
-      } catch (err) {
-        statusBanner.textContent = 'Could not load current config from server.';
+        const res = await fetch(API);
+        if (res.ok) populate(await res.json());
+      } catch (_) {
+        statusMsg.textContent = 'Could not load configuration from server';
       }
     }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       saveBtn.disabled = true;
-      statusBanner.className = '';
-      statusBanner.textContent = 'Saving...';
+      statusMsg.className = 'save-status';
+      statusMsg.textContent = 'Saving...';
 
-      const selectedPreset = document.querySelector('input[name="Preset"]:checked')?.value || 'Custom';
+      const preset = document.querySelector('input[name="Preset"]:checked')?.value || 'Custom';
       const payload = {
-        ...currentConfig,
-        Preset: selectedPreset
+        ...baseConfig,
+        Preset: preset
       };
 
-      sliderIds.forEach((id) => {
-        payload[id] = parseFloat(document.getElementById(id).value) || 0;
+      sliders.forEach(s => {
+        payload[s.id] = parseFloat(document.getElementById(s.id).value) || 0;
       });
-      checkboxIds.forEach((id) => {
+      checkboxes.forEach(id => {
         payload[id] = document.getElementById(id).checked;
       });
 
       try {
-        const res = await fetch(API_ENDPOINT, {
+        const res = await fetch(API, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
         if (res.ok) {
           const saved = await res.json();
-          populateForm(saved);
-          statusBanner.className = 'saved';
-          statusBanner.textContent = `Saved! Active preset: ${saved.Preset} (${saved.DurabilityLossPercent}% durability penalty).`;
+          populate(saved);
+          statusMsg.className = 'save-status ok';
+          statusMsg.textContent = `Saved! ${saved.Preset} preset active (${saved.DurabilityLossPercent}% wear).`;
         } else {
-          statusBanner.textContent = 'Error saving configuration.';
+          statusMsg.textContent = 'Error saving changes.';
         }
-      } catch (err) {
-        statusBanner.textContent = 'Network error saving configuration.';
+      } catch (_) {
+        statusMsg.textContent = 'Network error saving configuration.';
       } finally {
         saveBtn.disabled = false;
       }
     });
 
-    loadConfig();
+    load();
   </script>
 </body>
 </html>
-
