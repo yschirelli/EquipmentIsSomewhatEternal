@@ -1,0 +1,336 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Web.Script.Serialization;
+using BepInEx;
+using BepInEx.Configuration;
+
+namespace EquipmentIsSomewhatEternal.Client;
+
+public enum DifficultyPreset
+{
+    Easy,
+    Medium,
+    Hard,
+    Custom
+}
+
+[BepInPlugin("com.yschirelli.equipmentissomewhateternal.client", "EquipmentIsSomewhatEternal", "1.0.0")]
+public class Plugin : BaseUnityPlugin
+{
+    private ConfigEntry<DifficultyPreset> _preset = null!;
+    private ConfigEntry<float> _durabilityLossPercent = null!;
+    private ConfigEntry<float> _minDurabilityFloorPercent = null!;
+    private ConfigEntry<bool> _affectMaxDurability = null!;
+    private ConfigEntry<float> _consumableResourceLossPercent = null!;
+
+    private ConfigEntry<bool> _keepBackpackItems = null!;
+    private ConfigEntry<bool> _keepPocketItems = null!;
+    private ConfigEntry<bool> _keepRigItems = null!;
+
+    private ConfigEntry<bool> _keepMeds = null!;
+    private ConfigEntry<bool> _keepProvisions = null!;
+    private ConfigEntry<bool> _keepMagazines = null!;
+    private ConfigEntry<bool> _keepAmmo = null!;
+    private ConfigEntry<bool> _keepGrenades = null!;
+    private ConfigEntry<bool> _keepKeys = null!;
+    private ConfigEntry<bool> _keepMoney = null!;
+    private ConfigEntry<bool> _keepBarterItems = null!;
+
+    private ConfigEntry<bool> _onlyRestoreInsured = null!;
+    private ConfigEntry<bool> _keepQuestItems = null!;
+    private ConfigEntry<bool> _restoreArmBand = null!;
+    private ConfigEntry<bool> _restoreSpecialSlots = null!;
+    private ConfigEntry<bool> _restoreScabbard = null!;
+    private ConfigEntry<bool> _restoreSecuredContainer = null!;
+    private ConfigEntry<bool> _deduplicateItems = null!;
+
+    private bool _enableWebUi = true;
+    private int _webUiPort = 6970;
+    private bool _suppressEvents;
+    private string? _serverConfigPath;
+    private FileSystemWatcher? _watcher;
+
+    private void Awake()
+    {
+        _serverConfigPath = ResolveServerConfigPath();
+
+        var order = 100;
+        ConfigDescription Desc(string text, bool isPercent = false) =>
+            new(text, isPercent ? new AcceptableValueRange<float>(0f, 100f) : null,
+                new ConfigurationManagerAttributes { Order = order--, ShowRangeAsPercent = isPercent ? false : null });
+
+        _preset = Config.Bind("1. Preset", "Difficulty Preset", DifficultyPreset.Easy,
+            Desc("Easy: keep all pre-raid gear/items (0% durability loss). Medium: 15% durability loss. Hard: lose items inside Backpack/Pockets/Rig + 30% durability loss. Custom: manual configuration."));
+
+        _durabilityLossPercent = Config.Bind("2. Durability & Resources", "Durability Loss %", 0f,
+            Desc("Percentage of max durability subtracted from restored weapons, armor, helmets, and plates on death.", true));
+        _minDurabilityFloorPercent = Config.Bind("2. Durability & Resources", "Min Durability Floor %", 10f,
+            Desc("Minimum durability floor (% of max durability) so repeated deaths never brick gear to 0.", true));
+        _affectMaxDurability = Config.Bind("2. Durability & Resources", "Affect Max Durability (Burn)", false,
+            Desc("Also reduce max durability on death to simulate repair degradation."));
+        _consumableResourceLossPercent = Config.Bind("2. Durability & Resources", "Consumable Resource Drain %", 0f,
+            Desc("Percentage drained from kept multi-use medkits and food/drink resources on death.", true));
+
+        _keepBackpackItems = Config.Bind("3. Container Contents", "Keep Backpack Items", true,
+            Desc("Keep pre-raid items stored inside your Backpack."));
+        _keepPocketItems = Config.Bind("3. Container Contents", "Keep Pocket Items", true,
+            Desc("Keep pre-raid items stored inside your Pockets."));
+        _keepRigItems = Config.Bind("3. Container Contents", "Keep Tactical Rig Items", true,
+            Desc("Keep pre-raid items stored inside your Tactical Rig."));
+
+        _keepMeds = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Meds & Stims", false,
+            Desc("Keep medical items and stimulators even if their container loses contents."));
+        _keepProvisions = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Food & Drink", false,
+            Desc("Keep provisions even if their container loses contents."));
+        _keepMagazines = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Magazines", false,
+            Desc("Keep weapon magazines even if their container loses contents."));
+        _keepAmmo = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Loose & Mag Ammo", false,
+            Desc("Keep loose ammo stacks, ammo boxes, and cartridges inside kept magazines."));
+        _keepGrenades = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Grenades", false,
+            Desc("Keep throwable grenades even if their container loses contents."));
+        _keepKeys = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Keys & Keycards", true,
+            Desc("Keep mechanical keys and keycards even if their container loses contents."));
+        _keepMoney = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Money", false,
+            Desc("Keep cash stacks even if their container loses contents."));
+        _keepBarterItems = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Barter Items", false,
+            Desc("Keep barter items even if their container loses contents."));
+
+        _onlyRestoreInsured = Config.Bind("5. Special Slots & Insurance", "Only Restore Insured Gear", false,
+            Desc("Only restore pre-raid equipment slots that were insured before entering the raid."));
+        _keepQuestItems = Config.Bind("5. Special Slots & Insurance", "Keep In-Raid Quest Items", false,
+            Desc("Preserve quest items collected during the raid on death."));
+        _restoreArmBand = Config.Bind("5. Special Slots & Insurance", "Restore ArmBand Snapshot", false,
+            Desc("Restore pre-raid ArmBand on death."));
+        _restoreSpecialSlots = Config.Bind("5. Special Slots & Insurance", "Restore Special Slots Snapshot", false,
+            Desc("Restore pre-raid Special Slots on death."));
+        _restoreScabbard = Config.Bind("5. Special Slots & Insurance", "Restore Scabbard Snapshot", false,
+            Desc("Restore pre-raid melee Scabbard on death."));
+        _restoreSecuredContainer = Config.Bind("5. Special Slots & Insurance", "Restore Secured Container Snapshot", false,
+            Desc("Restore pre-raid Secure Container on death (warning: overwrites items placed into Secure Container during raid)."));
+        _deduplicateItems = Config.Bind("5. Special Slots & Insurance", "Deduplicate Moved Items", true,
+            Desc("Drop duplicate item IDs when an item was moved between slots in-raid."));
+
+        LoadFromServerJson();
+
+        _preset.SettingChanged += OnPresetChanged;
+        _durabilityLossPercent.SettingChanged += OnPresetDependentSettingChanged;
+        _keepBackpackItems.SettingChanged += OnPresetDependentSettingChanged;
+        _keepPocketItems.SettingChanged += OnPresetDependentSettingChanged;
+        _keepRigItems.SettingChanged += OnPresetDependentSettingChanged;
+        Config.SettingChanged += (_, _) =>
+        {
+            if (!_suppressEvents) SaveToServerJson();
+        };
+
+        StartWatchingServerConfig();
+        Logger.LogInfo($"EquipmentIsSomewhatEternal F12 Plugin loaded (Server config: {_serverConfigPath ?? "not found"})");
+    }
+
+    private void OnPresetChanged(object sender, EventArgs e)
+    {
+        if (_suppressEvents) return;
+        _suppressEvents = true;
+        try
+        {
+            switch (_preset.Value)
+            {
+                case DifficultyPreset.Easy:
+                    _durabilityLossPercent.Value = 0f;
+                    _keepBackpackItems.Value = true;
+                    _keepPocketItems.Value = true;
+                    _keepRigItems.Value = true;
+                    break;
+                case DifficultyPreset.Medium:
+                    _durabilityLossPercent.Value = 15f;
+                    _keepBackpackItems.Value = true;
+                    _keepPocketItems.Value = true;
+                    _keepRigItems.Value = true;
+                    break;
+                case DifficultyPreset.Hard:
+                    _durabilityLossPercent.Value = 30f;
+                    _keepBackpackItems.Value = false;
+                    _keepPocketItems.Value = false;
+                    _keepRigItems.Value = false;
+                    break;
+            }
+            SaveToServerJson();
+        }
+        finally
+        {
+            _suppressEvents = false;
+        }
+    }
+
+    private void OnPresetDependentSettingChanged(object sender, EventArgs e)
+    {
+        if (_suppressEvents) return;
+        _suppressEvents = true;
+        try
+        {
+            _preset.Value = DifficultyPreset.Custom;
+            SaveToServerJson();
+        }
+        finally
+        {
+            _suppressEvents = false;
+        }
+    }
+
+    private static string? ResolveServerConfigPath()
+    {
+        var gameRoot = Path.GetFullPath(Path.Combine(Paths.BepInExRootPath, ".."));
+        string[] candidates =
+        [
+            Path.Combine(gameRoot, "SPT", "user", "mods", "EquipmentIsSomewhatEternal", "config.jsonc"),
+            Path.Combine(gameRoot, "user", "mods", "EquipmentIsSomewhatEternal", "config.jsonc"),
+            Path.Combine(gameRoot, "SPT", "user", "mods", "EquipmentIsEternal", "config.jsonc")
+        ];
+
+        foreach (var candidate in candidates)
+        {
+            if (File.Exists(candidate)) return candidate;
+        }
+
+        return candidates[0];
+    }
+
+    private void StartWatchingServerConfig()
+    {
+        if (_serverConfigPath == null) return;
+        var dir = Path.GetDirectoryName(_serverConfigPath);
+        if (dir == null || !Directory.Exists(dir)) return;
+
+        _watcher = new FileSystemWatcher(dir, Path.GetFileName(_serverConfigPath))
+        {
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
+            EnableRaisingEvents = true
+        };
+        _watcher.Changed += (_, _) => LoadFromServerJson();
+    }
+
+    private void LoadFromServerJson()
+    {
+        if (_serverConfigPath == null || !File.Exists(_serverConfigPath)) return;
+
+        try
+        {
+            var raw = File.ReadAllText(_serverConfigPath);
+            var cleanJson = Regex.Replace(raw, @"^\s*//.*$", "", RegexOptions.Multiline);
+            var serializer = new JavaScriptSerializer();
+            if (serializer.DeserializeObject(cleanJson) is not Dictionary<string, object> dict) return;
+
+            _suppressEvents = true;
+            try
+            {
+                if (dict.TryGetValue("EnableWebUi", out var webUi) && webUi is bool bWeb) _enableWebUi = bWeb;
+                if (dict.TryGetValue("WebUiPort", out var port) && port != null) _webUiPort = Convert.ToInt32(port, CultureInfo.InvariantCulture);
+
+                if (dict.TryGetValue("Preset", out var pObj) && pObj is string pStr && Enum.TryParse<DifficultyPreset>(pStr, true, out var parsedPreset))
+                    _preset.Value = parsedPreset;
+
+                ReadFloat(dict, "DurabilityLossPercent", _durabilityLossPercent);
+                ReadFloat(dict, "MinDurabilityFloorPercent", _minDurabilityFloorPercent);
+                ReadBool(dict, "AffectMaxDurability", _affectMaxDurability);
+                ReadFloat(dict, "ConsumableResourceLossPercent", _consumableResourceLossPercent);
+
+                ReadBool(dict, "KeepBackpackItems", _keepBackpackItems);
+                ReadBool(dict, "KeepPocketItems", _keepPocketItems);
+                ReadBool(dict, "KeepRigItems", _keepRigItems);
+
+                ReadBool(dict, "KeepMeds", _keepMeds);
+                ReadBool(dict, "KeepProvisions", _keepProvisions);
+                ReadBool(dict, "KeepAmmo", _keepAmmo);
+                ReadBool(dict, "KeepMagazines", _keepMagazines);
+                ReadBool(dict, "KeepGrenades", _keepGrenades);
+                ReadBool(dict, "KeepKeys", _keepKeys);
+                ReadBool(dict, "KeepMoney", _keepMoney);
+                ReadBool(dict, "KeepBarterItems", _keepBarterItems);
+
+                ReadBool(dict, "RestoreArmBand", _restoreArmBand);
+                ReadBool(dict, "RestoreSpecialSlots", _restoreSpecialSlots);
+                ReadBool(dict, "RestoreScabbard", _restoreScabbard);
+                ReadBool(dict, "RestoreSecuredContainer", _restoreSecuredContainer);
+                ReadBool(dict, "OnlyRestoreInsured", _onlyRestoreInsured);
+                ReadBool(dict, "KeepQuestItems", _keepQuestItems);
+                ReadBool(dict, "DeduplicateItems", _deduplicateItems);
+            }
+            finally
+            {
+                _suppressEvents = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning($"Could not read server config.jsonc: {ex.Message}");
+        }
+    }
+
+    private static void ReadFloat(Dictionary<string, object> dict, string key, ConfigEntry<float> entry)
+    {
+        if (dict.TryGetValue(key, out var val) && val != null)
+            entry.Value = Convert.ToSingle(val, CultureInfo.InvariantCulture);
+    }
+
+    private static void ReadBool(Dictionary<string, object> dict, string key, ConfigEntry<bool> entry)
+    {
+        if (dict.TryGetValue(key, out var val) && val is bool b)
+            entry.Value = b;
+    }
+
+    private void SaveToServerJson()
+    {
+        if (_serverConfigPath == null) return;
+        try
+        {
+            var dir = Path.GetDirectoryName(_serverConfigPath);
+            if (dir != null) Directory.CreateDirectory(dir);
+
+            var payload = new Dictionary<string, object>
+            {
+                ["EnableWebUi"] = _enableWebUi,
+                ["WebUiPort"] = _webUiPort,
+                ["Preset"] = _preset.Value.ToString(),
+                ["DurabilityLossPercent"] = Math.Round(_durabilityLossPercent.Value, 1),
+                ["MinDurabilityFloorPercent"] = Math.Round(_minDurabilityFloorPercent.Value, 1),
+                ["AffectMaxDurability"] = _affectMaxDurability.Value,
+                ["ConsumableResourceLossPercent"] = Math.Round(_consumableResourceLossPercent.Value, 1),
+                ["KeepBackpackItems"] = _keepBackpackItems.Value,
+                ["KeepPocketItems"] = _keepPocketItems.Value,
+                ["KeepRigItems"] = _keepRigItems.Value,
+                ["KeepMeds"] = _keepMeds.Value,
+                ["KeepProvisions"] = _keepProvisions.Value,
+                ["KeepAmmo"] = _keepAmmo.Value,
+                ["KeepMagazines"] = _keepMagazines.Value,
+                ["KeepGrenades"] = _keepGrenades.Value,
+                ["KeepKeys"] = _keepKeys.Value,
+                ["KeepMoney"] = _keepMoney.Value,
+                ["KeepBarterItems"] = _keepBarterItems.Value,
+                ["RestoreArmBand"] = _restoreArmBand.Value,
+                ["RestoreSpecialSlots"] = _restoreSpecialSlots.Value,
+                ["RestoreScabbard"] = _restoreScabbard.Value,
+                ["RestoreSecuredContainer"] = _restoreSecuredContainer.Value,
+                ["OnlyRestoreInsured"] = _onlyRestoreInsured.Value,
+                ["KeepQuestItems"] = _keepQuestItems.Value,
+                ["DeduplicateItems"] = _deduplicateItems.Value
+            };
+
+            if (_watcher != null) _watcher.EnableRaisingEvents = false;
+            try
+            {
+                var json = new JavaScriptSerializer().Serialize(payload);
+                File.WriteAllText(_serverConfigPath, json);
+            }
+            finally
+            {
+                if (_watcher != null) _watcher.EnableRaisingEvents = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning($"Could not write server config.jsonc: {ex.Message}");
+        }
+    }
+}

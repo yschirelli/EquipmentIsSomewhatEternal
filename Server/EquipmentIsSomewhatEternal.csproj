@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <NETCoreAppMaximumVersion>10.0</NETCoreAppMaximumVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Library</OutputType>
+    <AssemblyName>EquipmentIsSomewhatEternal</AssemblyName>
+    <RootNamespace>EquipmentIsEternal</RootNamespace>
+    <OutputPath>bin\$(Configuration)\$(ProjectName)\$(AssemblyName)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup Condition="$(NETCoreSdkVersion.StartsWith('9.'))">
+    <KnownFrameworkReference Include="Microsoft.NETCore.App"
+                             TargetFramework="net10.0"
+                             RuntimeFrameworkName="Microsoft.NETCore.App"
+                             DefaultRuntimeFrameworkVersion="9.0.0"
+                             LatestRuntimeFrameworkVersion="$(BundledNETCoreAppPackageVersion)"
+                             TargetingPackName="Microsoft.NETCore.App.Ref"
+                             TargetingPackVersion="$(BundledNETCoreAppPackageVersion)" />
+    <KnownFrameworkReference Include="Microsoft.AspNetCore.App"
+                             TargetFramework="net10.0"
+                             RuntimeFrameworkName="Microsoft.AspNetCore.App"
+                             DefaultRuntimeFrameworkVersion="9.0.0"
+                             LatestRuntimeFrameworkVersion="$(BundledNETCoreAppPackageVersion)"
+                             TargetingPackName="Microsoft.AspNetCore.App.Ref"
+                             TargetingPackVersion="$(BundledNETCoreAppPackageVersion)" />
+  </ItemGroup>
+  <Target Name="UseNet10RuntimeAssemblies" AfterTargets="FindReferenceAssembliesForReferences" BeforeTargets="CoreCompile" Condition="$(NETCoreSdkVersion.StartsWith('9.'))">
+    <ItemGroup>
+      <ReferencePathWithRefAssemblies Remove="@(ReferencePathWithRefAssemblies)" Condition="$([System.String]::Copy('%(Identity)').Contains('Microsoft.NETCore.App.Ref')) or $([System.String]::Copy('%(Identity)').Contains('Microsoft.AspNetCore.App.Ref'))" />
+      <ReferencePathWithRefAssemblies Include="$(NetCoreRoot)shared/Microsoft.NETCore.App/10.0.*/System*.dll" />
+      <ReferencePathWithRefAssemblies Include="$(NetCoreRoot)shared/Microsoft.NETCore.App/10.0.*/Microsoft*.dll" />
+      <ReferencePathWithRefAssemblies Include="$(NetCoreRoot)shared/Microsoft.NETCore.App/10.0.*/netstandard.dll" />
+      <ReferencePathWithRefAssemblies Include="$(NetCoreRoot)shared/Microsoft.AspNetCore.App/10.0.*/Microsoft.AspNetCore*.dll" />
+      <ReferencePathWithRefAssemblies Include="$(NetCoreRoot)shared/Microsoft.AspNetCore.App/10.0.*/Microsoft.Extensions*.dll" />
+    </ItemGroup>
+  </Target>
+  <ItemGroup>
+    <PackageReference Include="SPTarkov.Common" Version="4.1.2" />
+    <PackageReference Include="SPTarkov.DI" Version="4.1.2" />
+    <PackageReference Include="SPTarkov.Server.Core" Version="4.1.2" />
+    <PackageReference Include="SPTarkov.Reflection" Version="4.1.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config.jsonc" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

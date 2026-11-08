@@ -18,25 +18,24 @@ public class EquipmentIsEternal(
     public Task OnLoadAsync(CancellationToken cancellationToken)
     {
         var modPath = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
-        var config = modHelper.GetJsonDataFromFile<ModConfig>(modPath, "config.jsonc");
+        var initialConfig = modHelper.GetJsonDataFromFile<ModConfig>(modPath, "config.jsonc");
 
-        RaidEndPatch.SetConfig(config);
-        SaveProfilePatch.SetConfig(config);
+        ConfigStore.VerifySelfCheck();
+        ConfigStore.Initialize(modPath, initialConfig);
+        var config = ConfigStore.Load();
+
         EquipmentSnapshot.SetBackupDir(Path.Combine(modPath, "backups"));
 
         raidStartPatch.Enable();
         raidEndPatch.Enable();
         saveProfilePatch.Enable();
 
-        logger.Success("EquipmentIsEternal loaded");
-        logger.Info($"  OnlyRestoreInsured: {config.OnlyRestoreInsured}");
-        logger.Info($"  KeepQuestItems: {config.KeepQuestItems}");
-        logger.Info($"  RestoreArmBand: {config.RestoreArmBand}");
-        logger.Info($"  RestoreSpecialSlots: {config.RestoreSpecialSlots}");
-        logger.Info($"  RestoreScabbard: {config.RestoreScabbard}");
-        logger.Info($"  RestoreSecuredContainer: {config.RestoreSecuredContainer}");
-        logger.Info($"  DeduplicateItems: {config.DeduplicateItems}");
+        if (config.EnableWebUi)
+        {
+            WebConfigServer.Start(modPath, config.WebUiPort, logger);
+        }
 
+        logger.Success($"EquipmentIsSomewhatEternal loaded (Preset: {config.Preset}, DurabilityLoss: {config.DurabilityLossPercent}%)");
         return Task.CompletedTask;
     }
 }

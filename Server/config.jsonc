@@ -1,0 +1,38 @@
+{
+  // Local Web Config Page (http://127.0.0.1:6970)
+  "EnableWebUi": true,
+  "WebUiPort": 6970,
+
+  // Preset: "Easy", "Medium", "Hard", or "Custom"
+  "Preset": "Easy",
+
+  // Durability & consumable penalties on death restore (0 - 100)
+  "DurabilityLossPercent": 0.0,
+  "MinDurabilityFloorPercent": 10.0,
+  "AffectMaxDurability": false,
+  "ConsumableResourceLossPercent": 0.0,
+
+  // Container content toggles (whether items INSIDE these containers are kept)
+  "KeepBackpackItems": true,
+  "KeepPocketItems": true,
+  "KeepRigItems": true,
+
+  // Category retention overrides (kept even when their container loses items)
+  "KeepMeds": false,
+  "KeepProvisions": false,
+  "KeepAmmo": false,
+  "KeepMagazines": false,
+  "KeepGrenades": false,
+  "KeepKeys": true,
+  "KeepMoney": false,
+  "KeepBarterItems": false,
+
+  // Slot & insurance behavior
+  "RestoreArmBand": false,
+  "RestoreSpecialSlots": false,
+  "RestoreScabbard": false,
+  "RestoreSecuredContainer": false,
+  "OnlyRestoreInsured": false,
+  "KeepQuestItems": false,
+  "DeduplicateItems": true
+}
