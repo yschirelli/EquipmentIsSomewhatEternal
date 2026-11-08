@@ -185,7 +185,7 @@
     }
     .check-item {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.65rem;
       padding: 0.65rem 0.85rem;
       background: rgba(255,255,255,0.02);
@@ -194,18 +194,41 @@
       font-size: 0.88rem;
       cursor: pointer;
       user-select: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, opacity 0.15s;
     }
     .check-item:hover { border-color: #3b4457; }
     .check-item input[type="checkbox"] {
       accent-color: var(--accent);
       width: 16px;
       height: 16px;
+      margin-top: 0.15rem;
+      flex-shrink: 0;
       cursor: pointer;
     }
     .check-item:has(input:checked) {
       border-color: rgba(229, 179, 88, 0.4);
       background: rgba(229, 179, 88, 0.04);
+    }
+    .check-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .check-title {
+      font-weight: 600;
+      color: #fff;
+    }
+    .check-desc {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    /* Disabled whitelist state */
+    .section-disabled {
+      opacity: 0.4;
+      pointer-events: none;
+      user-select: none;
     }
 
     /* Collapsible Details */
@@ -371,45 +394,69 @@
       </div>
 
       <!-- 4. Category overrides -->
-      <details>
+      <details id="whitelist-details">
         <summary>
           <span>Category Whitelist (Always Kept on Death)</span>
-          <span style="font-size: 0.75rem;">Overrides container loss &darr;</span>
+          <span id="whitelist-hint" style="font-size: 0.75rem;">Overrides container loss &darr;</span>
         </summary>
-        <div class="details-body">
-          <p class="slider-sub" style="margin-top:0; margin-bottom: 1rem;">These items are saved even if their container was set to be lost above.</p>
-          <div class="check-grid">
+        <div class="details-body" id="whitelist-body">
+          <p class="slider-sub" id="whitelist-sub" style="margin-top:0; margin-bottom: 1rem;">These items are saved even if their container was set to be lost above.</p>
+          <div class="check-grid" id="whitelist-grid">
             <label class="check-item">
               <input type="checkbox" id="KeepKeys">
-              <span>Keys &amp; Keycards</span>
+              <span class="check-text">
+                <span class="check-title">Keys &amp; Keycards</span>
+                <span class="check-desc">Mechanical keys, keyrings, and lab keycards.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="KeepMeds">
-              <span>Medical Supplies &amp; Stims</span>
+              <span class="check-text">
+                <span class="check-title">Medical Supplies &amp; Stims</span>
+                <span class="check-desc">Injectors, bandages, splints, and surgery kits.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="KeepAmmo">
-              <span>Loose Ammo &amp; Stacks</span>
+              <span class="check-text">
+                <span class="check-title">Loose Ammo &amp; Stacks</span>
+                <span class="check-desc">Ammo boxes and loose rounds in cargo grids.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="KeepMagazines">
-              <span>Loaded Magazines</span>
+              <span class="check-text">
+                <span class="check-title">Loaded Magazines</span>
+                <span class="check-desc">Spare magazines inside pockets, rig, or backpack.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="KeepProvisions">
-              <span>Food &amp; Drink</span>
+              <span class="check-text">
+                <span class="check-title">Food &amp; Drink</span>
+                <span class="check-desc">Hydration and energy consumables.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="KeepGrenades">
-              <span>Grenades &amp; Throwables</span>
+              <span class="check-text">
+                <span class="check-title">Grenades &amp; Throwables</span>
+                <span class="check-desc">Frag, flash, and smoke grenades.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="KeepMoney">
-              <span>Roubles, Dollars, Euros</span>
+              <span class="check-text">
+                <span class="check-title">Roubles, Dollars, Euros</span>
+                <span class="check-desc">Cash stacks stored in pockets or containers.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="KeepBarterItems">
-              <span>Barter &amp; Crafting Items</span>
+              <span class="check-text">
+                <span class="check-title">Barter &amp; Crafting Items</span>
+                <span class="check-desc">Hideout materials, electronics, and valuables.</span>
+              </span>
             </label>
           </div>
         </div>
@@ -434,27 +481,45 @@
           <div class="check-grid">
             <label class="check-item">
               <input type="checkbox" id="OnlyRestoreInsured">
-              <span>Only restore items covered by insurance</span>
+              <span class="check-text">
+                <span class="check-title">Only Restore Insured Gear</span>
+                <span class="check-desc">Only items insured before raid are restored; uninsured items are lost.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="KeepQuestItems">
-              <span>Keep in-raid quest items</span>
+              <span class="check-text">
+                <span class="check-title">Keep In-Raid Quest Items</span>
+                <span class="check-desc">Preserve found quest items in your quest inventory upon death.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="RestoreArmBand">
-              <span>Restore Armband snapshot</span>
+              <span class="check-text">
+                <span class="check-title">Restore Armband</span>
+                <span class="check-desc">Snapshot and restore the cosmetic or faction armband slot.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="RestoreSpecialSlots">
-              <span>Restore Special Slots (Rangefinder, Markers)</span>
+              <span class="check-text">
+                <span class="check-title">Restore Special Slots</span>
+                <span class="check-desc">Restore tools in special pockets (Rangefinder, Compass, Markers).</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="RestoreScabbard">
-              <span>Restore Melee weapon snapshot</span>
+              <span class="check-text">
+                <span class="check-title">Restore Melee Weapon</span>
+                <span class="check-desc">Restore equipped melee weapon/scabbard slot to pre-raid state.</span>
+              </span>
             </label>
             <label class="check-item">
               <input type="checkbox" id="RestoreSecuredContainer">
-              <span>Restore Secure Container snapshot</span>
+              <span class="check-text">
+                <span class="check-title">Restore Secure Container</span>
+                <span class="check-desc">Revert pouch contents to pre-raid snapshot (uncheck to keep raid pouch).</span>
+              </span>
             </label>
           </div>
         </div>
@@ -504,9 +569,34 @@
       });
     });
 
+    function updateWhitelistAvailability() {
+      const anyContainerUnchecked = 
+        !document.getElementById('KeepBackpackItems').checked ||
+        !document.getElementById('KeepPocketItems').checked ||
+        !document.getElementById('KeepRigItems').checked;
+
+      const details = document.getElementById('whitelist-details');
+      const grid = document.getElementById('whitelist-grid');
+      const hint = document.getElementById('whitelist-hint');
+      const sub = document.getElementById('whitelist-sub');
+
+      if (anyContainerUnchecked) {
+        grid.classList.remove('section-disabled');
+        hint.textContent = 'Overrides container loss ↓';
+        sub.textContent = 'These items are saved even if their container was set to be lost above.';
+      } else {
+        grid.classList.add('section-disabled');
+        hint.textContent = 'Not needed (all containers kept) ↓';
+        sub.textContent = 'All containers are currently set to be kept. Uncheck Backpack, Pockets, or Tactical Rig above to enable item category filtering.';
+      }
+    }
+
     checkboxes.forEach(id => {
       document.getElementById(id).addEventListener('change', () => {
         if (!isInternalUpdate) selectPreset('Custom');
+        if (id === 'KeepBackpackItems' || id === 'KeepPocketItems' || id === 'KeepRigItems') {
+          updateWhitelistAvailability();
+        }
       });
     });
 
@@ -534,6 +624,7 @@
         document.getElementById('KeepRigItems').checked = false;
       }
       sliders.forEach(updateSlider);
+      updateWhitelistAvailability();
       isInternalUpdate = false;
     }
 
@@ -562,6 +653,7 @@
           document.getElementById(id).checked = data[id];
         }
       });
+      updateWhitelistAvailability();
       isInternalUpdate = false;
     }
 
