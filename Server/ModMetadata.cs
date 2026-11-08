@@ -17,7 +17,7 @@ public record ModMetadata : IModMetadata, IModBlazorMetadata
     public string? Url { get; init; } = "https://github.com/yschirelli/EquipmentIsSomewhatEternal";
     public string License { get; init; } = "MIT";
 
-    public string? WWWRootUrl { get; set; } = "EquipmentIsSomewhatEternal";
-    public string? HomePage { get; set; } = "/equipment-is-somewhat-eternal";
-    public string? HomePageDescription { get; set; } = "Configure difficulty presets, durability penalties, and item retention filters.";
+    public string? WWWRootUrl { get; init; } = "EquipmentIsSomewhatEternal";
+    public string? HomePage { get; init; } = "/equipment-is-somewhat-eternal";
+    public string? HomePageDescription { get; init; } = "Configure difficulty presets, durability penalties, and item retention filters.";
 }
