@@ -521,6 +521,13 @@
                 <span class="check-desc">Revert pouch contents to pre-raid snapshot (uncheck to keep raid pouch).</span>
               </span>
             </label>
+            <label class="check-item">
+              <input type="checkbox" id="DeduplicateItems">
+              <span class="check-text">
+                <span class="check-title">Deduplicate Moved Items</span>
+                <span class="check-desc">Generate fresh IDs for restored items to avoid collisions with items moved during raid.</span>
+              </span>
+            </label>
           </div>
         </div>
       </details>
@@ -552,7 +559,7 @@
       'AffectMaxDurability',
       'KeepBackpackItems', 'KeepPocketItems', 'KeepRigItems',
       'KeepKeys', 'KeepMeds', 'KeepAmmo', 'KeepMagazines', 'KeepProvisions', 'KeepGrenades', 'KeepMoney', 'KeepBarterItems',
-      'OnlyRestoreInsured', 'KeepQuestItems', 'RestoreArmBand', 'RestoreSpecialSlots', 'RestoreScabbard', 'RestoreSecuredContainer'
+      'OnlyRestoreInsured', 'KeepQuestItems', 'RestoreArmBand', 'RestoreSpecialSlots', 'RestoreScabbard', 'RestoreSecuredContainer', 'DeduplicateItems'
     ];
 
     function updateSlider(s) {
