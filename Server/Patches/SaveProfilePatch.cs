@@ -120,6 +120,10 @@ public class SaveProfilePatch : AbstractPatch
             foreach (var rootItem in snapshot.EquipmentItems
                 .Where(i => i.ParentId == equipmentId && i.SlotId != null && i.SlotId.StartsWith("SpecialSlot")))
             {
+                if (config.OnlyRestoreInsured &&
+                    !snapshot.InsuredItemIds.Contains(rootItem.Id!.ToString()!))
+                    continue;
+
                 var itemTree = GetItemTree(snapshot.EquipmentItems, rootItem);
                 ApplyPenalties(itemTree, config);
                 RemoveExistingSlotItems(inventory, equipmentId, rootItem.SlotId!);
@@ -172,7 +176,7 @@ public class SaveProfilePatch : AbstractPatch
             if (IsArmorInsertOrPlate(child))
             {
                 result.Add(child);
-                EquipmentSnapshot.CollectChildrenPublic(allItems, child.Id!.ToString()!, result);
+                EquipmentSnapshot.CollectChildren(allItems, child.Id!.ToString()!, result);
                 continue;
             }
 
@@ -186,20 +190,24 @@ public class SaveProfilePatch : AbstractPatch
                 foreach (var magChild in allItems.Where(i => i.ParentId == child.Id!.ToString() && i.SlotId != "cartridges"))
                 {
                     result.Add(magChild);
-                    EquipmentSnapshot.CollectChildrenPublic(allItems, magChild.Id!.ToString()!, result);
+                    EquipmentSnapshot.CollectChildren(allItems, magChild.Id!.ToString()!, result);
                 }
             }
             else
             {
-                EquipmentSnapshot.CollectChildrenPublic(allItems, child.Id!.ToString()!, result);
+                EquipmentSnapshot.CollectChildren(allItems, child.Id!.ToString()!, result);
             }
         }
 
         return result;
     }
 
-    private static bool IsArmorInsertOrPlate(Item item)
+    public static bool IsArmorInsertOrPlate(Item item)
     {
+        // Loose items inside a storage grid always have grid coordinates (Location != null);
+        // installed armor plates and soft inserts occupy named equipment slots (Location == null).
+        if (item.Location != null) return false;
+
         if (item.SlotId != null &&
             (_itemHelper != null && _itemHelper.IsSoftInsertId(item.SlotId) ||
              item.SlotId.StartsWith("Armor_plate", StringComparison.OrdinalIgnoreCase) ||
@@ -245,15 +253,18 @@ public class SaveProfilePatch : AbstractPatch
                 item.Upd.Repairable.MaxDurability is double max &&
                 max > 0)
             {
-                var loss = max * (lossPct / 100.0);
-                var floor = max * (floorPct / 100.0);
-
-                item.Upd.Repairable.Durability = Math.Round(Math.Max(floor, Math.Min(cur, cur - loss)), 2);
+                var baseMax = GetTemplateMaxDurability(item.Template, max);
+                var loss = baseMax * (lossPct / 100.0);
+                var floor = baseMax * (floorPct / 100.0);
 
                 if (config.AffectMaxDurability)
                 {
-                    item.Upd.Repairable.MaxDurability = Math.Round(Math.Max(floor, max - loss), 2);
+                    max = Math.Round(Math.Min(max, Math.Max(floor, max - loss)), 2);
+                    item.Upd.Repairable.MaxDurability = max;
                 }
+
+                var newCur = Math.Min(cur, Math.Max(floor, cur - loss));
+                item.Upd.Repairable.Durability = Math.Round(Math.Min(max, newCur), 2);
             }
 
             if (resourcePct > 0f)
@@ -269,6 +280,18 @@ public class SaveProfilePatch : AbstractPatch
                 }
             }
         }
+    }
+
+    private static double GetTemplateMaxDurability(MongoId tpl, double fallbackMax)
+    {
+        if (_itemHelper != null &&
+            _itemHelper.GetItem(tpl) is { Key: true, Value.Properties.MaxDurability: double tplMax } &&
+            tplMax > 0)
+        {
+            return tplMax;
+        }
+
+        return fallbackMax;
     }
 
     private static void ResolveDuplicateIds(List<Item> inventory, MongoId sessionID, ModConfig config)
@@ -332,6 +355,10 @@ public class SaveProfilePatch : AbstractPatch
             .FirstOrDefault(i => i.ParentId == equipmentId && i.SlotId == slotId);
         if (rootItem == null) return;
 
+        if (config.OnlyRestoreInsured &&
+            !snapshot.InsuredItemIds.Contains(rootItem.Id!.ToString()!))
+            return;
+
         var itemTree = GetItemTree(snapshot.EquipmentItems, rootItem);
         ApplyPenalties(itemTree, config);
         RemoveExistingSlotItems(inventory, equipmentId, slotId);
@@ -342,7 +369,7 @@ public class SaveProfilePatch : AbstractPatch
     private static List<Item> GetItemTree(List<Item> allItems, Item root)
     {
         var result = new List<Item> { root };
-        EquipmentSnapshot.CollectChildrenPublic(allItems, root.Id!.ToString()!, result);
+        EquipmentSnapshot.CollectChildren(allItems, root.Id!.ToString()!, result);
         return result;
     }
 

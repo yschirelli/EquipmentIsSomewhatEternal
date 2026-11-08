@@ -14,7 +14,7 @@ Our goal is to add:
 3. **Container Content Stripping (`Backpack`, `Pockets`, `TacticalVest`)**
 4. **Item-Category Retention Filters (`Meds`, `Provisions`, `Ammo`, `Magazines`, `Keys`, `Grenades`, `Money`, `Barter`)**
 5. **Dual Live Configuration**:
-   - **SPT Web Config Page** (`http://127.0.0.1:6970`) hosted directly by the server mod so players can configure everything in a browser without relying on the in-game F12 menu.
+   - **SPT Server Information Center (SIC) Mod Page** (`https://127.0.0.1:6969/equipment-is-somewhat-eternal`) hosted natively on SPT's HTTPS server (`ModPage` + `IHttpListener`) so players can configure everything in a browser without relying on the in-game F12 menu.
    - **BepInEx F12 ConfigurationManager Menu** (`Client/`) for quick in-game toggling.
    - **Scope note**: Fika / remote multi-machine sync is explicitly out of scope for the initial release; Server, Web UI, and Client share the local `config.jsonc` file.
 
@@ -45,8 +45,8 @@ Our goal is to add:
 
 ## Architecture Rules (Ponytail — Minimal & Maintainable)
 1. **Single Source of Truth (`config.jsonc`)**:
-   - **Server (`Server/`)**: `.NET 10` (`SPTarkov.Server.Core`). Owns all snapshot, container filtering, category classification (`ItemHelper.IsOfBaseclass`), and durability mutation inside `SaveProfilePatch`, plus the lightweight `HttpListener` Web Config Server.
-   - **Web Config UI (`Server/wwwroot/index.html`)**: Served at `http://127.0.0.1:6970` (configurable port in `config.jsonc`). Uses `GET /api/config` and `POST /api/config` to read and write `config.jsonc` live.
+   - **Server (`Server/`)**: `.NET 10` (`SPTarkov.Server.Core`). Owns all snapshot, container filtering, category classification (`ItemHelper.IsOfBaseclass`), and durability mutation inside `SaveProfilePatch`, plus the native SIC `ModPage` and `IHttpListener`.
+   - **Web Config UI (`Server/wwwroot/index.html`)**: Served at `https://127.0.0.1:6969/equipment-is-somewhat-eternal`. Uses `GET /equipment-is-somewhat-eternal/api/config` and `POST /equipment-is-somewhat-eternal/api/config` to read and write `config.jsonc` live.
    - **BepInEx F12 Client (`Client/`)**: `.NET Framework 4.7.2` (`BepInEx 5`). Single-file `Plugin.cs` that reads/writes the same `SPT/user/mods/EquipmentIsSomewhatEternal/config.jsonc` file (and reloads it when opening F12 so changes made in the Web UI are reflected in-game).
    - **Live Reload**: `SaveProfilePatch` and `RaidEndPatch` read the latest config from disk/memory on each raid end, so changes in either the Web UI or F12 apply immediately without restarting SPT or EFT.
 2. **Container Stripping & Category Filtering**:

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
 using BepInEx;
@@ -48,6 +49,8 @@ public class Plugin : BaseUnityPlugin
     private ConfigEntry<bool> _deduplicateItems = null!;
 
     private bool _suppressEvents;
+    private volatile bool _reloadPending;
+    private long _reloadAtTicks;
     private string? _serverConfigPath;
     private FileSystemWatcher? _watcher;
 
@@ -125,6 +128,20 @@ public class Plugin : BaseUnityPlugin
 
         StartWatchingServerConfig();
         Logger.LogInfo($"EquipmentIsSomewhatEternal F12 Plugin loaded (Server config: {_serverConfigPath ?? "not found"})");
+    }
+
+    private void Update()
+    {
+        if (_reloadPending && DateTime.UtcNow.Ticks >= _reloadAtTicks)
+        {
+            _reloadPending = false;
+            LoadFromServerJson();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _watcher?.Dispose();
     }
 
     private void OnPresetChanged(object sender, EventArgs e)
@@ -206,7 +223,11 @@ public class Plugin : BaseUnityPlugin
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
             EnableRaisingEvents = true
         };
-        _watcher.Changed += (_, _) => LoadFromServerJson();
+        _watcher.Changed += (_, _) =>
+        {
+            _reloadAtTicks = DateTime.UtcNow.AddMilliseconds(150).Ticks;
+            _reloadPending = true;
+        };
     }
 
     private void LoadFromServerJson()
@@ -283,38 +304,40 @@ public class Plugin : BaseUnityPlugin
             var dir = Path.GetDirectoryName(_serverConfigPath);
             if (dir != null) Directory.CreateDirectory(dir);
 
-            var payload = new Dictionary<string, object>
-            {
-                ["Preset"] = _preset.Value.ToString(),
-                ["DurabilityLossPercent"] = Math.Round(_durabilityLossPercent.Value, 1),
-                ["MinDurabilityFloorPercent"] = Math.Round(_minDurabilityFloorPercent.Value, 1),
-                ["AffectMaxDurability"] = _affectMaxDurability.Value,
-                ["ConsumableResourceLossPercent"] = Math.Round(_consumableResourceLossPercent.Value, 1),
-                ["KeepBackpackItems"] = _keepBackpackItems.Value,
-                ["KeepPocketItems"] = _keepPocketItems.Value,
-                ["KeepRigItems"] = _keepRigItems.Value,
-                ["KeepMeds"] = _keepMeds.Value,
-                ["KeepProvisions"] = _keepProvisions.Value,
-                ["KeepAmmo"] = _keepAmmo.Value,
-                ["KeepMagazines"] = _keepMagazines.Value,
-                ["KeepGrenades"] = _keepGrenades.Value,
-                ["KeepKeys"] = _keepKeys.Value,
-                ["KeepMoney"] = _keepMoney.Value,
-                ["KeepBarterItems"] = _keepBarterItems.Value,
-                ["RestoreArmBand"] = _restoreArmBand.Value,
-                ["RestoreSpecialSlots"] = _restoreSpecialSlots.Value,
-                ["RestoreScabbard"] = _restoreScabbard.Value,
-                ["RestoreSecuredContainer"] = _restoreSecuredContainer.Value,
-                ["OnlyRestoreInsured"] = _onlyRestoreInsured.Value,
-                ["KeepQuestItems"] = _keepQuestItems.Value,
-                ["DeduplicateItems"] = _deduplicateItems.Value
-            };
+            static string FmtFloat(float v) => Math.Round(v, 1).ToString("0.0", CultureInfo.InvariantCulture);
+            static string FmtBool(bool v) => v ? "true" : "false";
+
+            var sb = new StringBuilder();
+            sb.AppendLine("{");
+            sb.AppendLine($"  \"Preset\": \"{_preset.Value}\",");
+            sb.AppendLine($"  \"DurabilityLossPercent\": {FmtFloat(_durabilityLossPercent.Value)},");
+            sb.AppendLine($"  \"MinDurabilityFloorPercent\": {FmtFloat(_minDurabilityFloorPercent.Value)},");
+            sb.AppendLine($"  \"AffectMaxDurability\": {FmtBool(_affectMaxDurability.Value)},");
+            sb.AppendLine($"  \"ConsumableResourceLossPercent\": {FmtFloat(_consumableResourceLossPercent.Value)},");
+            sb.AppendLine($"  \"KeepBackpackItems\": {FmtBool(_keepBackpackItems.Value)},");
+            sb.AppendLine($"  \"KeepPocketItems\": {FmtBool(_keepPocketItems.Value)},");
+            sb.AppendLine($"  \"KeepRigItems\": {FmtBool(_keepRigItems.Value)},");
+            sb.AppendLine($"  \"KeepMeds\": {FmtBool(_keepMeds.Value)},");
+            sb.AppendLine($"  \"KeepProvisions\": {FmtBool(_keepProvisions.Value)},");
+            sb.AppendLine($"  \"KeepAmmo\": {FmtBool(_keepAmmo.Value)},");
+            sb.AppendLine($"  \"KeepMagazines\": {FmtBool(_keepMagazines.Value)},");
+            sb.AppendLine($"  \"KeepGrenades\": {FmtBool(_keepGrenades.Value)},");
+            sb.AppendLine($"  \"KeepKeys\": {FmtBool(_keepKeys.Value)},");
+            sb.AppendLine($"  \"KeepMoney\": {FmtBool(_keepMoney.Value)},");
+            sb.AppendLine($"  \"KeepBarterItems\": {FmtBool(_keepBarterItems.Value)},");
+            sb.AppendLine($"  \"RestoreArmBand\": {FmtBool(_restoreArmBand.Value)},");
+            sb.AppendLine($"  \"RestoreSpecialSlots\": {FmtBool(_restoreSpecialSlots.Value)},");
+            sb.AppendLine($"  \"RestoreScabbard\": {FmtBool(_restoreScabbard.Value)},");
+            sb.AppendLine($"  \"RestoreSecuredContainer\": {FmtBool(_restoreSecuredContainer.Value)},");
+            sb.AppendLine($"  \"OnlyRestoreInsured\": {FmtBool(_onlyRestoreInsured.Value)},");
+            sb.AppendLine($"  \"KeepQuestItems\": {FmtBool(_keepQuestItems.Value)},");
+            sb.AppendLine($"  \"DeduplicateItems\": {FmtBool(_deduplicateItems.Value)}");
+            sb.AppendLine("}");
 
             if (_watcher != null) _watcher.EnableRaisingEvents = false;
             try
             {
-                var json = new JavaScriptSerializer().Serialize(payload);
-                File.WriteAllText(_serverConfigPath, json);
+                File.WriteAllText(_serverConfigPath, sb.ToString());
             }
             finally
             {

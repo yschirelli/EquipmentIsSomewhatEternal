@@ -58,14 +58,14 @@ public record ModConfig
         },
         DifficultyPreset.Medium => this with
         {
-            DurabilityLossPercent = DurabilityLossPercent > 0f ? DurabilityLossPercent : 15f,
+            DurabilityLossPercent = 15f,
             KeepBackpackItems = true,
             KeepPocketItems = true,
             KeepRigItems = true
         },
         DifficultyPreset.Hard => this with
         {
-            DurabilityLossPercent = DurabilityLossPercent > 0f ? DurabilityLossPercent : 30f,
+            DurabilityLossPercent = 30f,
             KeepBackpackItems = false,
             KeepPocketItems = false,
             KeepRigItems = false
@@ -142,6 +142,10 @@ public static class ConfigStore
         if (hard.DurabilityLossPercent != 30f || hard.KeepBackpackItems || hard.KeepPocketItems || hard.KeepRigItems)
             throw new InvalidOperationException("Self-check failed: Hard preset normalization.");
 
+        var mediumFromHard = (hard with { Preset = DifficultyPreset.Medium }).NormalizePreset();
+        if (mediumFromHard.DurabilityLossPercent != 15f || !mediumFromHard.KeepBackpackItems)
+            throw new InvalidOperationException("Self-check failed: Hard -> Medium preset transition.");
+
         var item = new SPTarkov.Server.Core.Models.Eft.Common.Tables.Item
         {
             Id = new SPTarkov.Server.Core.Models.Common.MongoId(),
@@ -159,5 +163,22 @@ public static class ConfigStore
         Patches.SaveProfilePatch.ApplyPenalties([item], hard);
         if (item.Upd.Repairable.Durability != 10.0)
             throw new InvalidOperationException($"Self-check failed: Expected durability floor 10.0, got {item.Upd.Repairable.Durability}.");
+
+        // Item below floor (5.0 / 100.0) must not heal up to 10.0 on death
+        item.Upd.Repairable.Durability = 5.0;
+        Patches.SaveProfilePatch.ApplyPenalties([item], hard);
+        if (item.Upd.Repairable.Durability != 5.0)
+            throw new InvalidOperationException($"Self-check failed: Sub-floor item healed to {item.Upd.Repairable.Durability}.");
+
+        // Loose armor plate in a backpack grid (Location != null) must not be treated as an installed plate
+        var loosePlate = new SPTarkov.Server.Core.Models.Eft.Common.Tables.Item
+        {
+            Id = new SPTarkov.Server.Core.Models.Common.MongoId(),
+            Template = new SPTarkov.Server.Core.Models.Common.MongoId("644120aa86ffbe10ee032b6f"),
+            SlotId = "main",
+            Location = new SPTarkov.Server.Core.Models.Eft.Common.Tables.ItemLocation()
+        };
+        if (Patches.SaveProfilePatch.IsArmorInsertOrPlate(loosePlate))
+            throw new InvalidOperationException("Self-check failed: Loose grid plate treated as installed plate.");
     }
 }

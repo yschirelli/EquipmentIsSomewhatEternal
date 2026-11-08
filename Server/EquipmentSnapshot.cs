@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
-using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Utils;
 
@@ -57,22 +56,17 @@ public static class EquipmentSnapshot
     {
         if (_backupDir == null) return null;
 
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        var path = System.IO.Path.Combine(_backupDir, $"{sessionId}_{timestamp}_snapshot.json");
-        var json = JsonSerializer.Serialize(data, JsonUtil.JsonSerializerOptionsIndented);
-        File.WriteAllText(path, json);
-        return path;
-    }
-
-    public static string? WriteProfileBackup(string sessionId, object profile)
-    {
-        if (_backupDir == null) return null;
-
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        var path = System.IO.Path.Combine(_backupDir, $"{sessionId}_{timestamp}_profile.json");
-        var json = JsonSerializer.Serialize(profile, JsonUtil.JsonSerializerOptionsIndented);
-        File.WriteAllText(path, json);
-        return path;
+        try
+        {
+            var path = System.IO.Path.Combine(_backupDir, $"{sessionId}_latest_snapshot.json");
+            var json = JsonSerializer.Serialize(data, JsonUtil.JsonSerializerOptionsIndented);
+            File.WriteAllText(path, json);
+            return path;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public static List<Item> DeepCloneItems(IEnumerable<Item> items)
@@ -115,10 +109,7 @@ public static class EquipmentSnapshot
         return result;
     }
 
-    public static void CollectChildrenPublic(List<Item> allItems, string parentId, List<Item> result)
-        => CollectChildren(allItems, parentId, result);
-
-    private static void CollectChildren(List<Item> allItems, string parentId, List<Item> result)
+    public static void CollectChildren(List<Item> allItems, string parentId, List<Item> result)
     {
         foreach (var child in allItems.Where(i => i.ParentId == parentId))
         {

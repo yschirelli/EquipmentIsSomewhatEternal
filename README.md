@@ -81,24 +81,22 @@ Configuration can be changed via three methods:
 
 ### Difficulty Presets
 
-- **Easy**: Keeps all backpack, pocket, and tactical rig items with 0% durability/resource loss.
-- **Medium**: Keeps pocket and rig items, loses backpack items, 10% durability loss.
-- **Hard**: Loses backpack, pocket, and rig contents, 25% durability loss.
+- **Easy**: Keeps all pre-raid backpack, pocket, and tactical rig items with 0% durability/resource loss.
+- **Medium**: Keeps pre-raid backpack, pocket, and rig items (loses loot found in raid), 15% durability loss.
+- **Hard**: Loses backpack, pocket, and rig contents (unless whitelisted by category toggles), 30% durability loss.
 - **Custom**: Fully user-defined parameters.
 
 ### Key Settings
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
-| `Preset` | string | `Medium` | Active preset (`Easy`, `Medium`, `Hard`, `Custom`). |
-| `DurabilityLossPercent` | float | `10.0` | Percentage of max/current durability deducted on death. |
-| `MinDurabilityFloorPercent` | float | `20.0` | Minimum durability percentage below which items won't degrade further. |
-| `AffectMaxDurability` | bool | `true` | When true, lowers the item's maximum durability cap. |
-| `ConsumableResourceLossPercent` | float | `0.0` | Percentage loss applied to medkits, repair kits, water/food. |
-| `KeepBackpackItems` | bool | `false` | Retain loose items inside backpack. |
-| `KeepPocketItems` | bool | `true` | Retain loose items inside pockets. |
-| `KeepRigItems` | bool | `true` | Retain loose items inside tactical rig. |
+| `Preset` | string | `Easy` | Active preset (`Easy`, `Medium`, `Hard`, `Custom`). |
+| `DurabilityLossPercent` | float | `0.0` | Percentage of max durability deducted on death. |
+| `MinDurabilityFloorPercent` | float | `10.0` | Minimum durability percentage floor below which items won't degrade further. |
+| `AffectMaxDurability` | bool | `false` | When true, also lowers the item's maximum repairable durability cap. |
+| `ConsumableResourceLossPercent` | float | `0.0` | Percentage loss applied to kept medkits and food/drink resources. |
+| `KeepBackpackItems` | bool | `true` | Retain pre-raid items inside backpack. |
+| `KeepPocketItems` | bool | `true` | Retain pre-raid items inside pockets. |
+| `KeepRigItems` | bool | `true` | Retain pre-raid items inside tactical rig. |
 | `OnlyRestoreInsured` | bool | `false` | Only restore items that were insured prior to raid. |
 | `DeduplicateItems` | bool | `true` | Ensures no duplicate IDs occur when merging snapshot with post-raid profile. |
-| `EnableWebUi` | bool | `true` | Enables embedded configuration server. |
-| `WebUiPort` | int | `8088` | Web UI port. |

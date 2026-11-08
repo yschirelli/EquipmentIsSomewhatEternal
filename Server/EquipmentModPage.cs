@@ -13,3 +13,4 @@ public class EquipmentModPage : ModPage
         Description = "Configure difficulty presets, durability penalties, and item retention filters.";
     }
 }
+
