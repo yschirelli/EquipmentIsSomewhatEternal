@@ -112,11 +112,6 @@ public class SaveProfilePatch : AbstractPatch
 
             if (itemsToRestore.Count == 0) continue;
 
-            if (config.StripFoundInRaid)
-            {
-                StripFoundInRaidFlags(itemsToRestore);
-            }
-
             ApplyPenalties(itemsToRestore, config);
 
             RemoveExistingSlotItems(inventory, equipmentId, slot);
@@ -149,6 +144,7 @@ public class SaveProfilePatch : AbstractPatch
             pending.QuestItems is { Count: > 0 } questItems &&
             pmcData.Inventory.QuestRaidItems != null)
         {
+            ApplyPenalties(questItems, config);
             var questContainerId = pmcData.Inventory.QuestRaidItems.ToString()!;
             var existingIds = EquipmentSnapshot.GetAllChildrenOf(inventory, questContainerId)
                 .Select(i => i.Id)
@@ -163,7 +159,7 @@ public class SaveProfilePatch : AbstractPatch
         else
             _logger.Success($"EquipmentIsSomewhatEternal: Restored {restoredCount} items for session {sessionID} (Preset={config.Preset}, DurabilityLoss={config.DurabilityLossPercent}%)");
 
-        ResolveDuplicateIds(inventory, sessionID, config);
+        ResolveDuplicateIds(inventory, sessionID);
     }
 
     public static bool IsSlotRestorationAllowed(string slot, ModConfig config) => slot switch
@@ -179,17 +175,6 @@ public class SaveProfilePatch : AbstractPatch
         "Eyewear" => config.RestoreEyewear,
         _ => true
     };
-
-    private static void StripFoundInRaidFlags(IEnumerable<Item> items)
-    {
-        foreach (var item in items)
-        {
-            if (item.Upd?.SpawnedInSession == true)
-            {
-                item.Upd.SpawnedInSession = false;
-            }
-        }
-    }
 
     private static bool ShouldStripContainerCargo(string slot, ModConfig config) => slot switch
     {
@@ -283,10 +268,15 @@ public class SaveProfilePatch : AbstractPatch
         var floorPct = Math.Clamp(config.MinDurabilityFloorPercent, 0f, 100f);
         var resourcePct = Math.Clamp(config.ConsumableResourceLossPercent, 0f, 100f);
 
-        if (lossPct <= 0f && resourcePct <= 0f) return;
+        if (lossPct <= 0f && resourcePct <= 0f && !config.StripFoundInRaid) return;
 
         foreach (var item in items)
         {
+            if (config.StripFoundInRaid && item.Upd?.SpawnedInSession == true)
+            {
+                item.Upd.SpawnedInSession = false;
+            }
+
             if (lossPct > 0f &&
                 item.Upd?.Repairable?.Durability is double cur &&
                 item.Upd.Repairable.MaxDurability is double max &&
@@ -295,10 +285,7 @@ public class SaveProfilePatch : AbstractPatch
                 var effectiveLossPct = lossPct;
                 if (variancePct > 0f)
                 {
-                    // Deterministic pseudorandom jitter based on item ID and lossPct
-                    var seed = item.Id.ToString()?.GetHashCode() ?? 0;
-                    var rng = new Random(seed ^ (int)(lossPct * 100));
-                    var jitter = (rng.NextDouble() * 2.0 - 1.0) * variancePct;
+                    var jitter = (Random.Shared.NextDouble() * 2.0 - 1.0) * variancePct;
                     effectiveLossPct = (float)Math.Clamp(lossPct + jitter, 0.0, 100.0);
                 }
 
@@ -343,7 +330,7 @@ public class SaveProfilePatch : AbstractPatch
         return fallbackMax;
     }
 
-    private static void ResolveDuplicateIds(List<Item> inventory, MongoId sessionID, ModConfig config)
+    private static void ResolveDuplicateIds(List<Item> inventory, MongoId sessionID)
     {
         var seen = new HashSet<string>();
         var conflicts = new List<Item>();
@@ -357,36 +344,10 @@ public class SaveProfilePatch : AbstractPatch
 
         if (conflicts.Count == 0) return;
 
-        if (config.DeduplicateItems)
-        {
-            var doomed = new HashSet<Item>(conflicts, ReferenceEqualityComparer.Instance);
-            var removed = inventory.RemoveAll(doomed.Contains);
-            _logger.Warning(
-                $"EquipmentIsSomewhatEternal: Removed {removed} duplicate item(s) for session {sessionID} " +
-                $"(DeduplicateItems=true)");
-            return;
-        }
-
-        var rekeyed = 0;
-        foreach (var item in conflicts)
-        {
-            var oldId = item.Id.ToString()!;
-            var newId = new MongoId();
-            var conflictIndex = inventory.IndexOf(item);
-
-            for (var i = conflictIndex + 1; i < inventory.Count; i++)
-            {
-                if (inventory[i].ParentId?.ToString() == oldId)
-                    inventory[i].ParentId = newId;
-            }
-
-            item.Id = newId;
-            rekeyed++;
-        }
-
+        var doomed = new HashSet<Item>(conflicts, ReferenceEqualityComparer.Instance);
+        var removed = inventory.RemoveAll(doomed.Contains);
         _logger.Warning(
-            $"EquipmentIsSomewhatEternal: Re-keyed {rekeyed} conflicting item(s) for session {sessionID} " +
-            $"(DeduplicateItems=false)");
+            $"EquipmentIsSomewhatEternal: Removed {removed} duplicate item(s) for session {sessionID}");
     }
 
     private static void RestoreTier2Slot(

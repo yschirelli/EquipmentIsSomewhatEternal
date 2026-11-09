@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +18,10 @@
       --green: #4ade80;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       padding: 2.5rem 1rem 6rem;
@@ -39,13 +43,18 @@
       align-items: center;
       margin-bottom: 2rem;
     }
+
     .back-link {
       color: var(--muted);
       text-decoration: none;
       font-size: 0.9rem;
       transition: color 0.15s;
     }
-    .back-link:hover { color: var(--accent); }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
     .badge {
       font-size: 0.75rem;
       letter-spacing: 0.05em;
@@ -63,6 +72,7 @@
       margin: 0 0 0.35rem;
       color: #fff;
     }
+
     .tagline {
       margin: 0 0 2rem;
       color: var(--muted);
@@ -85,8 +95,11 @@
       gap: 0.75rem;
       margin-bottom: 2rem;
     }
+
     @media (max-width: 640px) {
-      .presets-row { grid-template-columns: 1fr 1fr; }
+      .presets-row {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
     .preset-card {
@@ -101,28 +114,34 @@
       gap: 0.35rem;
       transition: all 0.15s ease;
     }
+
     .preset-card:hover {
       border-color: #3b4457;
       background: var(--card-hover);
     }
+
     .preset-card input {
       position: absolute;
       opacity: 0;
       pointer-events: none;
     }
+
     .preset-card:has(input:checked) {
       border-color: var(--accent);
       background: rgba(229, 179, 88, 0.08);
       box-shadow: 0 0 0 1px var(--accent);
     }
+
     .p-name {
       font-weight: 700;
       font-size: 1.05rem;
       color: #fff;
     }
+
     .preset-card:has(input:checked) .p-name {
       color: var(--accent);
     }
+
     .p-desc {
       font-size: 0.8rem;
       color: var(--muted);
@@ -141,28 +160,36 @@
     .slider-box {
       margin-bottom: 1.5rem;
     }
-    .slider-box:last-child { margin-bottom: 0; }
+
+    .slider-box:last-child {
+      margin-bottom: 0;
+    }
+
     .slider-head {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
       margin-bottom: 0.4rem;
     }
+
     .slider-label {
       font-weight: 600;
       font-size: 0.95rem;
     }
+
     .slider-val {
       font-size: 1.1rem;
       font-weight: 700;
       color: var(--accent);
       font-variant-numeric: tabular-nums;
     }
+
     .slider-sub {
       font-size: 0.8rem;
       color: var(--muted);
       margin: 0.2rem 0 0.5rem;
     }
+
     input[type="range"] {
       width: 100%;
       height: 6px;
@@ -180,15 +207,19 @@
       grid-template-columns: 1fr 1fr;
       gap: 0.6rem;
     }
+
     @media (max-width: 580px) {
-      .check-grid { grid-template-columns: 1fr; }
+      .check-grid {
+        grid-template-columns: 1fr;
+      }
     }
+
     .check-item {
       display: flex;
       align-items: flex-start;
       gap: 0.65rem;
       padding: 0.65rem 0.85rem;
-      background: rgba(255,255,255,0.02);
+      background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border);
       border-radius: 8px;
       font-size: 0.88rem;
@@ -196,7 +227,11 @@
       user-select: none;
       transition: border-color 0.15s, opacity 0.15s;
     }
-    .check-item:hover { border-color: #3b4457; }
+
+    .check-item:hover {
+      border-color: #3b4457;
+    }
+
     .check-item input[type="checkbox"] {
       accent-color: var(--accent);
       width: 16px;
@@ -205,19 +240,23 @@
       flex-shrink: 0;
       cursor: pointer;
     }
+
     .check-item:has(input:checked) {
       border-color: rgba(229, 179, 88, 0.4);
       background: rgba(229, 179, 88, 0.04);
     }
+
     .check-text {
       display: flex;
       flex-direction: column;
       gap: 0.15rem;
     }
+
     .check-title {
       font-weight: 600;
       color: #fff;
     }
+
     .check-desc {
       font-size: 0.78rem;
       color: var(--muted);
@@ -239,6 +278,7 @@
       margin-bottom: 1.5rem;
       overflow: hidden;
     }
+
     summary {
       padding: 1rem 1.25rem;
       font-weight: 600;
@@ -251,11 +291,16 @@
       align-items: center;
       transition: color 0.15s;
     }
-    summary:hover { color: var(--text); }
+
+    summary:hover {
+      color: var(--text);
+    }
+
     details[open] summary {
       color: var(--text);
       border-bottom: 1px solid var(--border);
     }
+
     .details-body {
       padding: 1.25rem;
     }
@@ -275,9 +320,10 @@
       justify-content: space-between;
       align-items: center;
       gap: 1rem;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.7);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
       z-index: 100;
     }
+
     .save-status {
       font-size: 0.88rem;
       color: var(--muted);
@@ -285,10 +331,12 @@
       align-items: center;
       gap: 0.5rem;
     }
+
     .save-status.ok {
       color: var(--green);
       font-weight: 600;
     }
+
     .btn-save {
       background: var(--accent);
       color: #0b0c10;
@@ -300,11 +348,22 @@
       cursor: pointer;
       transition: opacity 0.15s, transform 0.05s;
     }
-    .btn-save:hover { opacity: 0.92; }
-    .btn-save:active { transform: scale(0.98); }
-    .btn-save:disabled { opacity: 0.5; cursor: wait; }
+
+    .btn-save:hover {
+      opacity: 0.92;
+    }
+
+    .btn-save:active {
+      transform: scale(0.98);
+    }
+
+    .btn-save:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="top-nav">
@@ -316,10 +375,12 @@
     <p class="tagline">Death retention presets, durability wear, and container cargo settings.</p>
 
     <!-- Master Switch -->
-    <div class="panel" style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid var(--accent);">
+    <div class="panel"
+      style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid var(--accent);">
       <div>
         <div style="font-weight: 600; font-size: 1.05rem;">Enable Equipment Retention</div>
-        <div style="color: var(--muted); font-size: 0.85rem;">Master toggle. Turn off to restore vanilla Tarkov death behavior.</div>
+        <div style="color: var(--muted); font-size: 0.85rem;">Master toggle. Turn off to restore vanilla Tarkov death
+          behavior.</div>
       </div>
       <label class="check-item" style="padding: 0; background: none; border: none; cursor: pointer;">
         <input type="checkbox" id="ModEnabled" style="width: 1.4rem; height: 1.4rem; accent-color: var(--accent);">
@@ -396,7 +457,8 @@
       <!-- 3. Equipped Slots -->
       <div class="section-title">Equipped Slot Protection</div>
       <div class="panel">
-        <p class="slider-sub" style="margin-top: 0; margin-bottom: 1rem;">Choose which equipped gear slots are kept on death.</p>
+        <p class="slider-sub" style="margin-top: 0; margin-bottom: 1rem;">Choose which equipped gear slots are kept on
+          death.</p>
         <div class="check-grid">
           <label class="check-item">
             <input type="checkbox" id="RestorePrimaryWeapons">
@@ -467,17 +529,19 @@
       <!-- 4. Container rules -->
       <div class="section-title">Pre-Raid Container Inventory</div>
       <div class="panel">
-        <p class="slider-sub" style="margin-top: 0; margin-bottom: 1rem;">Choose which containers keep the items you entered the raid with.</p>
+        <p class="slider-sub" style="margin-top: 0; margin-bottom: 1rem;">Choose which kept containers also keep the
+          items inside them. (If a container slot is unchecked above, the container and everything inside it are lost.)
+        </p>
         <div class="check-grid">
-          <label class="check-item">
+          <label class="check-item" id="wrap-KeepBackpackItems">
             <input type="checkbox" id="KeepBackpackItems">
             <span>Keep items inside Backpack</span>
           </label>
-          <label class="check-item">
+          <label class="check-item" id="wrap-KeepPocketItems">
             <input type="checkbox" id="KeepPocketItems">
             <span>Keep items inside Pockets</span>
           </label>
-          <label class="check-item">
+          <label class="check-item" id="wrap-KeepRigItems">
             <input type="checkbox" id="KeepRigItems">
             <span>Keep items inside Tactical Rig</span>
           </label>
@@ -491,7 +555,8 @@
           <span id="whitelist-hint" style="font-size: 0.75rem;">Overrides container loss &darr;</span>
         </summary>
         <div class="details-body" id="whitelist-body">
-          <p class="slider-sub" id="whitelist-sub" style="margin-top:0; margin-bottom: 1rem;">These items are saved even if their container was set to be lost above.</p>
+          <p class="slider-sub" id="whitelist-sub" style="margin-top:0; margin-bottom: 1rem;">These items are saved even
+            if their container was set to be lost above.</p>
           <div class="check-grid" id="whitelist-grid">
             <label class="check-item">
               <input type="checkbox" id="KeepKeys">
@@ -565,7 +630,8 @@
               <span class="slider-label">Meds &amp; Provisions Resource Drain</span>
               <span class="slider-val" id="drain-val">0%</span>
             </div>
-            <p class="slider-sub">% drained from multi-use medical kits (Salewa, Grizzly) and water rations on death.</p>
+            <p class="slider-sub">% drained from multi-use medical kits (Salewa, Grizzly) and water rations on death.
+            </p>
             <input type="range" id="ConsumableResourceLossPercent" min="0" max="100" step="1" value="0">
           </div>
 
@@ -671,31 +737,37 @@
     });
 
     function updateWhitelistAvailability() {
-      const anyContainerUnchecked = 
-        !document.getElementById('KeepBackpackItems').checked ||
-        !document.getElementById('KeepPocketItems').checked ||
-        !document.getElementById('KeepRigItems').checked;
+      const bpSlotKept = document.getElementById('RestoreBackpack').checked;
+      const rigSlotKept = document.getElementById('RestoreTacticalVest').checked;
 
-      const details = document.getElementById('whitelist-details');
+      document.getElementById('wrap-KeepBackpackItems').classList.toggle('section-disabled', !bpSlotKept);
+      document.getElementById('wrap-KeepRigItems').classList.toggle('section-disabled', !rigSlotKept);
+
+      const anyKeptContainerStripsCargo =
+        (bpSlotKept && !document.getElementById('KeepBackpackItems').checked) ||
+        !document.getElementById('KeepPocketItems').checked ||
+        (rigSlotKept && !document.getElementById('KeepRigItems').checked);
+
       const grid = document.getElementById('whitelist-grid');
       const hint = document.getElementById('whitelist-hint');
       const sub = document.getElementById('whitelist-sub');
 
-      if (anyContainerUnchecked) {
+      if (anyKeptContainerStripsCargo) {
         grid.classList.remove('section-disabled');
         hint.textContent = 'Overrides container loss ↓';
-        sub.textContent = 'These items are saved even if their container was set to be lost above.';
+        sub.textContent = 'These items are saved inside kept containers (Pockets, or kept Backpack/Rig) even when their container contents are set to be lost above.';
       } else {
         grid.classList.add('section-disabled');
-        hint.textContent = 'Not needed (all containers kept) ↓';
-        sub.textContent = 'All containers are currently set to be kept. Uncheck Backpack, Pockets, or Tactical Rig above to enable item category filtering.';
+        hint.textContent = 'Not needed (all kept containers keep items) ↓';
+        sub.textContent = 'All kept containers already keep their items. Uncheck Pockets, or a kept Backpack/Tactical Rig above to filter by item category.';
       }
     }
 
     checkboxes.forEach(id => {
       document.getElementById(id).addEventListener('change', () => {
-        if (!isInternalUpdate) selectPreset('Custom');
-        if (id === 'KeepBackpackItems' || id === 'KeepPocketItems' || id === 'KeepRigItems') {
+        if (!isInternalUpdate && id !== 'ModEnabled') selectPreset('Custom');
+        if (id === 'KeepBackpackItems' || id === 'KeepPocketItems' || id === 'KeepRigItems' ||
+          id === 'RestoreBackpack' || id === 'RestoreTacticalVest') {
           updateWhitelistAvailability();
         }
       });
@@ -708,55 +780,18 @@
 
     function applyPresetValues(p) {
       isInternalUpdate = true;
-      if (p === 'Easy') {
-        document.getElementById('DurabilityLossPercent').value = 0;
-        document.getElementById('DurabilityLossVariancePercent').value = 0;
-        document.getElementById('RestorePrimaryWeapons').checked = true;
-        document.getElementById('RestoreHolster').checked = true;
-        document.getElementById('RestoreArmorVest').checked = true;
-        document.getElementById('RestoreTacticalVest').checked = true;
-        document.getElementById('RestoreBackpack').checked = true;
-        document.getElementById('RestoreHeadwear').checked = true;
-        document.getElementById('RestoreEarpiece').checked = true;
-        document.getElementById('RestoreFaceCover').checked = true;
-        document.getElementById('RestoreEyewear').checked = true;
-        document.getElementById('KeepBackpackItems').checked = true;
-        document.getElementById('KeepPocketItems').checked = true;
-        document.getElementById('KeepRigItems').checked = true;
-        document.getElementById('StripFoundInRaid').checked = false;
-      } else if (p === 'Medium') {
-        document.getElementById('DurabilityLossPercent').value = 15;
-        document.getElementById('DurabilityLossVariancePercent').value = 5;
-        document.getElementById('RestorePrimaryWeapons').checked = true;
-        document.getElementById('RestoreHolster').checked = true;
-        document.getElementById('RestoreArmorVest').checked = true;
-        document.getElementById('RestoreTacticalVest').checked = true;
-        document.getElementById('RestoreBackpack').checked = true;
-        document.getElementById('RestoreHeadwear').checked = true;
-        document.getElementById('RestoreEarpiece').checked = true;
-        document.getElementById('RestoreFaceCover').checked = true;
-        document.getElementById('RestoreEyewear').checked = true;
-        document.getElementById('KeepBackpackItems').checked = true;
-        document.getElementById('KeepPocketItems').checked = true;
-        document.getElementById('KeepRigItems').checked = true;
-        document.getElementById('StripFoundInRaid').checked = false;
-      } else if (p === 'Hard') {
-        document.getElementById('DurabilityLossPercent').value = 30;
-        document.getElementById('DurabilityLossVariancePercent').value = 10;
-        document.getElementById('RestorePrimaryWeapons').checked = true;
-        document.getElementById('RestoreHolster').checked = true;
-        document.getElementById('RestoreArmorVest').checked = true;
-        document.getElementById('RestoreTacticalVest').checked = true;
-        document.getElementById('RestoreBackpack').checked = false;
-        document.getElementById('RestoreHeadwear').checked = true;
-        document.getElementById('RestoreEarpiece').checked = true;
-        document.getElementById('RestoreFaceCover').checked = true;
-        document.getElementById('RestoreEyewear').checked = true;
-        document.getElementById('KeepBackpackItems').checked = false;
-        document.getElementById('KeepPocketItems').checked = false;
-        document.getElementById('KeepRigItems').checked = false;
-        document.getElementById('StripFoundInRaid').checked = true;
-      }
+      const isHard = p === 'Hard';
+      document.getElementById('DurabilityLossPercent').value = p === 'Easy' ? 0 : p === 'Medium' ? 15 : 30;
+      document.getElementById('DurabilityLossVariancePercent').value = p === 'Easy' ? 0 : p === 'Medium' ? 5 : 10;
+      ['RestorePrimaryWeapons', 'RestoreHolster', 'RestoreArmorVest', 'RestoreTacticalVest',
+        'RestoreHeadwear', 'RestoreEarpiece', 'RestoreFaceCover', 'RestoreEyewear'].forEach(id => {
+          document.getElementById(id).checked = true;
+        });
+      document.getElementById('RestoreBackpack').checked = !isHard;
+      document.getElementById('KeepBackpackItems').checked = !isHard;
+      document.getElementById('KeepPocketItems').checked = !isHard;
+      document.getElementById('KeepRigItems').checked = !isHard;
+      document.getElementById('StripFoundInRaid').checked = isHard;
       sliders.forEach(updateSlider);
       updateWhitelistAvailability();
       isInternalUpdate = false;
@@ -843,4 +878,5 @@
     load();
   </script>
 </body>
+
 </html>

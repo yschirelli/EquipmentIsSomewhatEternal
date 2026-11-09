@@ -41,6 +41,8 @@ public class RaidStartPatch : AbstractPatch
     [PatchPrefix]
     public static void Prefix(MongoId sessionId, StartLocalRaidRequestData request)
     {
+        if (!ConfigStore.Load().ModEnabled) return;
+
         var profile = _profileHelper.GetFullProfile(sessionId);
         var pmcData = profile?.CharacterData?.PmcData;
         if (pmcData?.Inventory?.Items == null || pmcData.Inventory.Equipment == null)

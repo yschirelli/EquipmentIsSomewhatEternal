@@ -35,6 +35,11 @@ public class RaidEndPatch : AbstractPatch
         if (!isDead) return;
 
         var config = ConfigStore.Load();
+        if (!config.ModEnabled)
+        {
+            EquipmentSnapshot.Retrieve(sessionId.ToString()!);
+            return;
+        }
 
         // Capture quest items before death processing removes them
         List<Item>? questItems = null;

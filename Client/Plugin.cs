@@ -197,59 +197,24 @@ public class Plugin : BaseUnityPlugin
         _suppressEvents = true;
         try
         {
-            switch (_preset.Value)
+            if (_preset.Value is DifficultyPreset.Easy or DifficultyPreset.Medium or DifficultyPreset.Hard)
             {
-                case DifficultyPreset.Easy:
-                    _durabilityLossPercent.Value = 0f;
-                    _durabilityLossVariancePercent.Value = 0f;
-                    _restorePrimaryWeapons.Value = true;
-                    _restoreHolster.Value = true;
-                    _restoreArmorVest.Value = true;
-                    _restoreTacticalVest.Value = true;
-                    _restoreBackpack.Value = true;
-                    _restoreHeadwear.Value = true;
-                    _restoreEarpiece.Value = true;
-                    _restoreFaceCover.Value = true;
-                    _restoreEyewear.Value = true;
-                    _keepBackpackItems.Value = true;
-                    _keepPocketItems.Value = true;
-                    _keepRigItems.Value = true;
-                    _stripFoundInRaid.Value = false;
-                    break;
-                case DifficultyPreset.Medium:
-                    _durabilityLossPercent.Value = 15f;
-                    _durabilityLossVariancePercent.Value = 5f;
-                    _restorePrimaryWeapons.Value = true;
-                    _restoreHolster.Value = true;
-                    _restoreArmorVest.Value = true;
-                    _restoreTacticalVest.Value = true;
-                    _restoreBackpack.Value = true;
-                    _restoreHeadwear.Value = true;
-                    _restoreEarpiece.Value = true;
-                    _restoreFaceCover.Value = true;
-                    _restoreEyewear.Value = true;
-                    _keepBackpackItems.Value = true;
-                    _keepPocketItems.Value = true;
-                    _keepRigItems.Value = true;
-                    _stripFoundInRaid.Value = false;
-                    break;
-                case DifficultyPreset.Hard:
-                    _durabilityLossPercent.Value = 30f;
-                    _durabilityLossVariancePercent.Value = 10f;
-                    _restorePrimaryWeapons.Value = true;
-                    _restoreHolster.Value = true;
-                    _restoreArmorVest.Value = true;
-                    _restoreTacticalVest.Value = true;
-                    _restoreBackpack.Value = false;
-                    _restoreHeadwear.Value = true;
-                    _restoreEarpiece.Value = true;
-                    _restoreFaceCover.Value = true;
-                    _restoreEyewear.Value = true;
-                    _keepBackpackItems.Value = false;
-                    _keepPocketItems.Value = false;
-                    _keepRigItems.Value = false;
-                    _stripFoundInRaid.Value = true;
-                    break;
+                var isHard = _preset.Value == DifficultyPreset.Hard;
+                _durabilityLossPercent.Value = _preset.Value == DifficultyPreset.Easy ? 0f : _preset.Value == DifficultyPreset.Medium ? 15f : 30f;
+                _durabilityLossVariancePercent.Value = _preset.Value == DifficultyPreset.Easy ? 0f : _preset.Value == DifficultyPreset.Medium ? 5f : 10f;
+                _restorePrimaryWeapons.Value = true;
+                _restoreHolster.Value = true;
+                _restoreArmorVest.Value = true;
+                _restoreTacticalVest.Value = true;
+                _restoreBackpack.Value = !isHard;
+                _restoreHeadwear.Value = true;
+                _restoreEarpiece.Value = true;
+                _restoreFaceCover.Value = true;
+                _restoreEyewear.Value = true;
+                _keepBackpackItems.Value = !isHard;
+                _keepPocketItems.Value = !isHard;
+                _keepRigItems.Value = !isHard;
+                _stripFoundInRaid.Value = isHard;
             }
             SaveToServerJson();
         }
