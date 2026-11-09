@@ -14,14 +14,29 @@ public enum DifficultyPreset
 
 public record ModConfig
 {
+    // Universal Master Toggle
+    public bool ModEnabled { get; init; } = true;
+
     // Preset selector
     public DifficultyPreset Preset { get; init; } = DifficultyPreset.Easy;
 
     // Durability & resource penalties
     public float DurabilityLossPercent { get; init; } = 0f;
+    public float DurabilityLossVariancePercent { get; init; } = 0f;
     public float MinDurabilityFloorPercent { get; init; } = 10f;
     public bool AffectMaxDurability { get; init; } = false;
     public float ConsumableResourceLossPercent { get; init; } = 0f;
+
+    // Equipped Slot Toggles (whether the equipped item slot itself is kept)
+    public bool RestorePrimaryWeapons { get; init; } = true;
+    public bool RestoreHolster { get; init; } = true;
+    public bool RestoreArmorVest { get; init; } = true;
+    public bool RestoreTacticalVest { get; init; } = true;
+    public bool RestoreBackpack { get; init; } = true;
+    public bool RestoreHeadwear { get; init; } = true;
+    public bool RestoreEarpiece { get; init; } = true;
+    public bool RestoreFaceCover { get; init; } = true;
+    public bool RestoreEyewear { get; init; } = true;
 
     // Container content toggles (whether items INSIDE these containers are kept)
     public bool KeepBackpackItems { get; init; } = true;
@@ -38,13 +53,17 @@ public record ModConfig
     public bool KeepMoney { get; init; } = false;
     public bool KeepBarterItems { get; init; } = false;
 
-    // Original EquipmentIsEternal toggles
+    // Special slots, insurance & item rules
     public bool RestoreArmBand { get; init; } = false;
     public bool RestoreSpecialSlots { get; init; } = false;
     public bool RestoreScabbard { get; init; } = false;
     public bool RestoreSecuredContainer { get; init; } = false;
     public bool OnlyRestoreInsured { get; init; } = false;
     public bool KeepQuestItems { get; init; } = false;
+    public bool StripFoundInRaid { get; init; } = false;
+
+    // Always keep true internally to prevent item duplication bug; preserved for backward compatibility
+    [JsonIgnore]
     public bool DeduplicateItems { get; init; } = true;
 
     public ModConfig NormalizePreset() => Preset switch
@@ -52,23 +71,56 @@ public record ModConfig
         DifficultyPreset.Easy => this with
         {
             DurabilityLossPercent = 0f,
+            DurabilityLossVariancePercent = 0f,
+            RestorePrimaryWeapons = true,
+            RestoreHolster = true,
+            RestoreArmorVest = true,
+            RestoreTacticalVest = true,
+            RestoreBackpack = true,
+            RestoreHeadwear = true,
+            RestoreEarpiece = true,
+            RestoreFaceCover = true,
+            RestoreEyewear = true,
             KeepBackpackItems = true,
             KeepPocketItems = true,
-            KeepRigItems = true
+            KeepRigItems = true,
+            StripFoundInRaid = false
         },
         DifficultyPreset.Medium => this with
         {
             DurabilityLossPercent = 15f,
+            DurabilityLossVariancePercent = 5f,
+            RestorePrimaryWeapons = true,
+            RestoreHolster = true,
+            RestoreArmorVest = true,
+            RestoreTacticalVest = true,
+            RestoreBackpack = true,
+            RestoreHeadwear = true,
+            RestoreEarpiece = true,
+            RestoreFaceCover = true,
+            RestoreEyewear = true,
             KeepBackpackItems = true,
             KeepPocketItems = true,
-            KeepRigItems = true
+            KeepRigItems = true,
+            StripFoundInRaid = false
         },
         DifficultyPreset.Hard => this with
         {
             DurabilityLossPercent = 30f,
+            DurabilityLossVariancePercent = 10f,
+            RestorePrimaryWeapons = true,
+            RestoreHolster = true,
+            RestoreArmorVest = true,
+            RestoreTacticalVest = true,
+            RestoreBackpack = false,
+            RestoreHeadwear = true,
+            RestoreEarpiece = true,
+            RestoreFaceCover = true,
+            RestoreEyewear = true,
             KeepBackpackItems = false,
             KeepPocketItems = false,
-            KeepRigItems = false
+            KeepRigItems = false,
+            StripFoundInRaid = true
         },
         _ => this
     };
@@ -139,11 +191,11 @@ public static class ConfigStore
     public static void VerifySelfCheck()
     {
         var hard = new ModConfig { Preset = DifficultyPreset.Hard }.NormalizePreset();
-        if (hard.DurabilityLossPercent != 30f || hard.KeepBackpackItems || hard.KeepPocketItems || hard.KeepRigItems)
+        if (hard.DurabilityLossPercent != 30f || hard.KeepBackpackItems || hard.KeepPocketItems || hard.KeepRigItems || hard.RestoreBackpack || !hard.StripFoundInRaid)
             throw new InvalidOperationException("Self-check failed: Hard preset normalization.");
 
         var mediumFromHard = (hard with { Preset = DifficultyPreset.Medium }).NormalizePreset();
-        if (mediumFromHard.DurabilityLossPercent != 15f || !mediumFromHard.KeepBackpackItems)
+        if (mediumFromHard.DurabilityLossPercent != 15f || !mediumFromHard.KeepBackpackItems || !mediumFromHard.RestoreBackpack || mediumFromHard.StripFoundInRaid)
             throw new InvalidOperationException("Self-check failed: Hard -> Medium preset transition.");
 
         var item = new SPTarkov.Server.Core.Models.Eft.Common.Tables.Item
@@ -180,5 +232,12 @@ public static class ConfigStore
         };
         if (Patches.SaveProfilePatch.IsArmorInsertOrPlate(loosePlate))
             throw new InvalidOperationException("Self-check failed: Loose grid plate treated as installed plate.");
+
+        // Slot filter check: Backpack disabled on hard preset
+        if (Patches.SaveProfilePatch.IsSlotRestorationAllowed("Backpack", hard))
+            throw new InvalidOperationException("Self-check failed: Backpack slot should be disabled on Hard preset.");
+
+        if (!Patches.SaveProfilePatch.IsSlotRestorationAllowed("FirstPrimaryWeapon", hard))
+            throw new InvalidOperationException("Self-check failed: FirstPrimaryWeapon slot should be allowed on Hard preset.");
     }
 }

@@ -63,6 +63,11 @@ public class SaveProfilePatch : AbstractPatch
         if (pending == null) return;
 
         var config = ConfigStore.Load();
+        if (!config.ModEnabled)
+        {
+            _logger.Info($"EquipmentIsSomewhatEternal: Mod is disabled via config (ModEnabled=false); skipping restore for session {sessionID}.");
+            return;
+        }
 
         var profile = _profileHelper.GetFullProfile(sessionID);
         var pmcData = profile?.CharacterData?.PmcData;
@@ -79,6 +84,9 @@ public class SaveProfilePatch : AbstractPatch
 
         foreach (var slot in Tier1Slots)
         {
+            if (!IsSlotRestorationAllowed(slot, config))
+                continue;
+
             var slotItems = snapshot.EquipmentItems
                 .Where(i => i.ParentId == equipmentId && i.SlotId == slot)
                 .ToList();
@@ -103,6 +111,11 @@ public class SaveProfilePatch : AbstractPatch
             }
 
             if (itemsToRestore.Count == 0) continue;
+
+            if (config.StripFoundInRaid)
+            {
+                StripFoundInRaidFlags(itemsToRestore);
+            }
 
             ApplyPenalties(itemsToRestore, config);
 
@@ -151,6 +164,31 @@ public class SaveProfilePatch : AbstractPatch
             _logger.Success($"EquipmentIsSomewhatEternal: Restored {restoredCount} items for session {sessionID} (Preset={config.Preset}, DurabilityLoss={config.DurabilityLossPercent}%)");
 
         ResolveDuplicateIds(inventory, sessionID, config);
+    }
+
+    public static bool IsSlotRestorationAllowed(string slot, ModConfig config) => slot switch
+    {
+        "FirstPrimaryWeapon" or "SecondPrimaryWeapon" => config.RestorePrimaryWeapons,
+        "Holster" => config.RestoreHolster,
+        "ArmorVest" => config.RestoreArmorVest,
+        "TacticalVest" => config.RestoreTacticalVest,
+        "Backpack" => config.RestoreBackpack,
+        "Headwear" => config.RestoreHeadwear,
+        "Earpiece" => config.RestoreEarpiece,
+        "FaceCover" => config.RestoreFaceCover,
+        "Eyewear" => config.RestoreEyewear,
+        _ => true
+    };
+
+    private static void StripFoundInRaidFlags(IEnumerable<Item> items)
+    {
+        foreach (var item in items)
+        {
+            if (item.Upd?.SpawnedInSession == true)
+            {
+                item.Upd.SpawnedInSession = false;
+            }
+        }
     }
 
     private static bool ShouldStripContainerCargo(string slot, ModConfig config) => slot switch
@@ -241,6 +279,7 @@ public class SaveProfilePatch : AbstractPatch
     public static void ApplyPenalties(IEnumerable<Item> items, ModConfig config)
     {
         var lossPct = Math.Clamp(config.DurabilityLossPercent, 0f, 100f);
+        var variancePct = Math.Clamp(config.DurabilityLossVariancePercent, 0f, 100f);
         var floorPct = Math.Clamp(config.MinDurabilityFloorPercent, 0f, 100f);
         var resourcePct = Math.Clamp(config.ConsumableResourceLossPercent, 0f, 100f);
 
@@ -253,8 +292,18 @@ public class SaveProfilePatch : AbstractPatch
                 item.Upd.Repairable.MaxDurability is double max &&
                 max > 0)
             {
+                var effectiveLossPct = lossPct;
+                if (variancePct > 0f)
+                {
+                    // Deterministic pseudorandom jitter based on item ID and lossPct
+                    var seed = item.Id.ToString()?.GetHashCode() ?? 0;
+                    var rng = new Random(seed ^ (int)(lossPct * 100));
+                    var jitter = (rng.NextDouble() * 2.0 - 1.0) * variancePct;
+                    effectiveLossPct = (float)Math.Clamp(lossPct + jitter, 0.0, 100.0);
+                }
+
                 var baseMax = GetTemplateMaxDurability(item.Template, max);
-                var loss = baseMax * (lossPct / 100.0);
+                var loss = baseMax * (effectiveLossPct / 100.0);
                 var floor = baseMax * (floorPct / 100.0);
 
                 if (config.AffectMaxDurability)

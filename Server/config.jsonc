@@ -1,14 +1,29 @@
 {
   // Configured natively in the SPT Server Information Center (SIC) at https://127.0.0.1:6969/ under MOD PAGES
 
+  // Master switch to turn mod on or off entirely
+  "ModEnabled": true,
+
   // Preset: "Easy", "Medium", "Hard", or "Custom"
   "Preset": "Easy",
 
   // Durability & consumable penalties on death restore (0 - 100)
   "DurabilityLossPercent": 0.0,
+  "DurabilityLossVariancePercent": 0.0,
   "MinDurabilityFloorPercent": 10.0,
   "AffectMaxDurability": false,
   "ConsumableResourceLossPercent": 0.0,
+
+  // Equipped slot recovery toggles (whether the equipped item slot is preserved on death)
+  "RestorePrimaryWeapons": true,
+  "RestoreHolster": true,
+  "RestoreArmorVest": true,
+  "RestoreTacticalVest": true,
+  "RestoreBackpack": true,
+  "RestoreHeadwear": true,
+  "RestoreEarpiece": true,
+  "RestoreFaceCover": true,
+  "RestoreEyewear": true,
 
   // Container content toggles (whether items INSIDE these containers are kept)
   "KeepBackpackItems": true,
@@ -25,12 +40,12 @@
   "KeepMoney": false,
   "KeepBarterItems": false,
 
-  // Slot & insurance behavior
+  // Special slots & insurance behavior
   "RestoreArmBand": false,
   "RestoreSpecialSlots": false,
   "RestoreScabbard": false,
   "RestoreSecuredContainer": false,
   "OnlyRestoreInsured": false,
   "KeepQuestItems": false,
-  "DeduplicateItems": true
+  "StripFoundInRaid": false
 }

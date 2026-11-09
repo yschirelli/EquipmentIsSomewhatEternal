@@ -21,11 +21,23 @@ public enum DifficultyPreset
 [BepInPlugin("com.yschirelli.equipmentissomewhateternal.client", "EquipmentIsSomewhatEternal", "1.0.0")]
 public class Plugin : BaseUnityPlugin
 {
+    private ConfigEntry<bool> _modEnabled = null!;
     private ConfigEntry<DifficultyPreset> _preset = null!;
     private ConfigEntry<float> _durabilityLossPercent = null!;
+    private ConfigEntry<float> _durabilityLossVariancePercent = null!;
     private ConfigEntry<float> _minDurabilityFloorPercent = null!;
     private ConfigEntry<bool> _affectMaxDurability = null!;
     private ConfigEntry<float> _consumableResourceLossPercent = null!;
+
+    private ConfigEntry<bool> _restorePrimaryWeapons = null!;
+    private ConfigEntry<bool> _restoreHolster = null!;
+    private ConfigEntry<bool> _restoreArmorVest = null!;
+    private ConfigEntry<bool> _restoreTacticalVest = null!;
+    private ConfigEntry<bool> _restoreBackpack = null!;
+    private ConfigEntry<bool> _restoreHeadwear = null!;
+    private ConfigEntry<bool> _restoreEarpiece = null!;
+    private ConfigEntry<bool> _restoreFaceCover = null!;
+    private ConfigEntry<bool> _restoreEyewear = null!;
 
     private ConfigEntry<bool> _keepBackpackItems = null!;
     private ConfigEntry<bool> _keepPocketItems = null!;
@@ -42,11 +54,11 @@ public class Plugin : BaseUnityPlugin
 
     private ConfigEntry<bool> _onlyRestoreInsured = null!;
     private ConfigEntry<bool> _keepQuestItems = null!;
+    private ConfigEntry<bool> _stripFoundInRaid = null!;
     private ConfigEntry<bool> _restoreArmBand = null!;
     private ConfigEntry<bool> _restoreSpecialSlots = null!;
     private ConfigEntry<bool> _restoreScabbard = null!;
     private ConfigEntry<bool> _restoreSecuredContainer = null!;
-    private ConfigEntry<bool> _deduplicateItems = null!;
 
     private bool _suppressEvents;
     private volatile bool _reloadPending;
@@ -63,64 +75,99 @@ public class Plugin : BaseUnityPlugin
             new(text, isPercent ? new AcceptableValueRange<float>(0f, 100f) : null,
                 new ConfigurationManagerAttributes { Order = order--, ShowRangeAsPercent = isPercent ? false : null });
 
-        _preset = Config.Bind("1. Preset", "Difficulty Preset", DifficultyPreset.Easy,
-            Desc("Easy: keep all pre-raid gear/items (0% durability loss). Medium: 15% durability loss. Hard: lose items inside Backpack/Pockets/Rig + 30% durability loss. Custom: manual configuration."));
+        _modEnabled = Config.Bind("1. General", "Mod Enabled", true,
+            Desc("Master toggle to enable or disable EquipmentIsSomewhatEternal entirely."));
 
-        _durabilityLossPercent = Config.Bind("2. Durability & Resources", "Durability Loss %", 0f,
+        _preset = Config.Bind("1. General", "Difficulty Preset", DifficultyPreset.Easy,
+            Desc("Easy: keep all pre-raid gear/items (0% durability loss). Medium: 15% durability loss. Hard: lose backpack & cargo + 30% durability loss + strip FIR. Custom: manual configuration."));
+
+        _durabilityLossPercent = Config.Bind("2. Durability & Penalties", "Durability Loss %", 0f,
             Desc("Percentage of max durability subtracted from restored weapons, armor, helmets, and plates on death.", true));
-        _minDurabilityFloorPercent = Config.Bind("2. Durability & Resources", "Min Durability Floor %", 10f,
+        _durabilityLossVariancePercent = Config.Bind("2. Durability & Penalties", "Durability Loss Variance %", 0f,
+            Desc("Random variance (+/- %) applied to durability loss to simulate combat damage unpredictability.", true));
+        _minDurabilityFloorPercent = Config.Bind("2. Durability & Penalties", "Min Durability Floor %", 10f,
             Desc("Minimum durability floor (% of max durability) so repeated deaths never brick gear to 0.", true));
-        _affectMaxDurability = Config.Bind("2. Durability & Resources", "Affect Max Durability (Burn)", false,
+        _affectMaxDurability = Config.Bind("2. Durability & Penalties", "Affect Max Durability (Burn)", false,
             Desc("Also reduce max durability on death to simulate repair degradation."));
-        _consumableResourceLossPercent = Config.Bind("2. Durability & Resources", "Consumable Resource Drain %", 0f,
+        _consumableResourceLossPercent = Config.Bind("2. Durability & Penalties", "Consumable Resource Drain %", 0f,
             Desc("Percentage drained from kept multi-use medkits and food/drink resources on death.", true));
 
-        _keepBackpackItems = Config.Bind("3. Container Contents", "Keep Backpack Items", true,
+        _restorePrimaryWeapons = Config.Bind("3. Equipped Slots", "Restore Primary Weapons", true,
+            Desc("Restore equipped primary weapons (first & second slots)."));
+        _restoreHolster = Config.Bind("3. Equipped Slots", "Restore Holster (Sidearm)", true,
+            Desc("Restore equipped sidearm pistol."));
+        _restoreArmorVest = Config.Bind("3. Equipped Slots", "Restore Armor Vest", true,
+            Desc("Restore equipped body armor vest."));
+        _restoreTacticalVest = Config.Bind("3. Equipped Slots", "Restore Tactical Rig", true,
+            Desc("Restore equipped chest rig / tactical vest."));
+        _restoreBackpack = Config.Bind("3. Equipped Slots", "Restore Backpack", true,
+            Desc("Restore equipped backpack itself (separate from contents)."));
+        _restoreHeadwear = Config.Bind("3. Equipped Slots", "Restore Headwear (Helmet/Hat)", true,
+            Desc("Restore equipped helmet or cap."));
+        _restoreEarpiece = Config.Bind("3. Equipped Slots", "Restore Headset / Earpiece", true,
+            Desc("Restore equipped tactical headset."));
+        _restoreFaceCover = Config.Bind("3. Equipped Slots", "Restore Face Cover", true,
+            Desc("Restore equipped balaclava or mask."));
+        _restoreEyewear = Config.Bind("3. Equipped Slots", "Restore Eyewear", true,
+            Desc("Restore equipped glasses or goggles."));
+
+        _keepBackpackItems = Config.Bind("4. Container Contents", "Keep Backpack Items", true,
             Desc("Keep pre-raid items stored inside your Backpack."));
-        _keepPocketItems = Config.Bind("3. Container Contents", "Keep Pocket Items", true,
+        _keepPocketItems = Config.Bind("4. Container Contents", "Keep Pocket Items", true,
             Desc("Keep pre-raid items stored inside your Pockets."));
-        _keepRigItems = Config.Bind("3. Container Contents", "Keep Tactical Rig Items", true,
+        _keepRigItems = Config.Bind("4. Container Contents", "Keep Tactical Rig Items", true,
             Desc("Keep pre-raid items stored inside your Tactical Rig."));
 
-        _keepMeds = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Meds & Stims", false,
+        _keepMeds = Config.Bind("5. Category Whitelist (When Container Lost)", "Keep Meds & Stims", false,
             Desc("Keep medical items and stimulators even if their container loses contents."));
-        _keepProvisions = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Food & Drink", false,
+        _keepProvisions = Config.Bind("5. Category Whitelist (When Container Lost)", "Keep Food & Drink", false,
             Desc("Keep provisions even if their container loses contents."));
-        _keepMagazines = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Magazines", false,
+        _keepMagazines = Config.Bind("5. Category Whitelist (When Container Lost)", "Keep Magazines", false,
             Desc("Keep weapon magazines even if their container loses contents."));
-        _keepAmmo = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Loose & Mag Ammo", false,
+        _keepAmmo = Config.Bind("5. Category Whitelist (When Container Lost)", "Keep Loose & Mag Ammo", false,
             Desc("Keep loose ammo stacks, ammo boxes, and cartridges inside kept magazines."));
-        _keepGrenades = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Grenades", false,
+        _keepGrenades = Config.Bind("5. Category Whitelist (When Container Lost)", "Keep Grenades", false,
             Desc("Keep throwable grenades even if their container loses contents."));
-        _keepKeys = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Keys & Keycards", true,
+        _keepKeys = Config.Bind("5. Category Whitelist (When Container Lost)", "Keep Keys & Keycards", true,
             Desc("Keep mechanical keys and keycards even if their container loses contents."));
-        _keepMoney = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Money", false,
+        _keepMoney = Config.Bind("5. Category Whitelist (When Container Lost)", "Keep Money", false,
             Desc("Keep cash stacks even if their container loses contents."));
-        _keepBarterItems = Config.Bind("4. Category Whitelist (When Container Lost)", "Keep Barter Items", false,
+        _keepBarterItems = Config.Bind("5. Category Whitelist (When Container Lost)", "Keep Barter Items", false,
             Desc("Keep barter items even if their container loses contents."));
 
-        _onlyRestoreInsured = Config.Bind("5. Special Slots & Insurance", "Only Restore Insured Gear", false,
+        _onlyRestoreInsured = Config.Bind("6. Special Rules & Extra Slots", "Only Restore Insured Gear", false,
             Desc("Only restore pre-raid equipment slots that were insured before entering the raid."));
-        _keepQuestItems = Config.Bind("5. Special Slots & Insurance", "Keep In-Raid Quest Items", false,
+        _keepQuestItems = Config.Bind("6. Special Rules & Extra Slots", "Keep In-Raid Quest Items", false,
             Desc("Preserve quest items collected during the raid on death."));
-        _restoreArmBand = Config.Bind("5. Special Slots & Insurance", "Restore ArmBand Snapshot", false,
+        _stripFoundInRaid = Config.Bind("6. Special Rules & Extra Slots", "Strip Found-in-Raid On Restore", false,
+            Desc("Remove Found-in-Raid status on restored items upon death."));
+        _restoreArmBand = Config.Bind("6. Special Rules & Extra Slots", "Restore ArmBand Snapshot", false,
             Desc("Restore pre-raid ArmBand on death."));
-        _restoreSpecialSlots = Config.Bind("5. Special Slots & Insurance", "Restore Special Slots Snapshot", false,
+        _restoreSpecialSlots = Config.Bind("6. Special Rules & Extra Slots", "Restore Special Slots Snapshot", false,
             Desc("Restore pre-raid Special Slots on death."));
-        _restoreScabbard = Config.Bind("5. Special Slots & Insurance", "Restore Scabbard Snapshot", false,
+        _restoreScabbard = Config.Bind("6. Special Rules & Extra Slots", "Restore Scabbard Snapshot", false,
             Desc("Restore pre-raid melee Scabbard on death."));
-        _restoreSecuredContainer = Config.Bind("5. Special Slots & Insurance", "Restore Secured Container Snapshot", false,
+        _restoreSecuredContainer = Config.Bind("6. Special Rules & Extra Slots", "Restore Secured Container Snapshot", false,
             Desc("Restore pre-raid Secure Container on death (warning: overwrites items placed into Secure Container during raid)."));
-        _deduplicateItems = Config.Bind("5. Special Slots & Insurance", "Deduplicate Moved Items", true,
-            Desc("Drop duplicate item IDs when an item was moved between slots in-raid."));
 
         LoadFromServerJson();
 
         _preset.SettingChanged += OnPresetChanged;
         _durabilityLossPercent.SettingChanged += OnPresetDependentSettingChanged;
+        _durabilityLossVariancePercent.SettingChanged += OnPresetDependentSettingChanged;
+        _restorePrimaryWeapons.SettingChanged += OnPresetDependentSettingChanged;
+        _restoreHolster.SettingChanged += OnPresetDependentSettingChanged;
+        _restoreArmorVest.SettingChanged += OnPresetDependentSettingChanged;
+        _restoreTacticalVest.SettingChanged += OnPresetDependentSettingChanged;
+        _restoreBackpack.SettingChanged += OnPresetDependentSettingChanged;
+        _restoreHeadwear.SettingChanged += OnPresetDependentSettingChanged;
+        _restoreEarpiece.SettingChanged += OnPresetDependentSettingChanged;
+        _restoreFaceCover.SettingChanged += OnPresetDependentSettingChanged;
+        _restoreEyewear.SettingChanged += OnPresetDependentSettingChanged;
         _keepBackpackItems.SettingChanged += OnPresetDependentSettingChanged;
         _keepPocketItems.SettingChanged += OnPresetDependentSettingChanged;
         _keepRigItems.SettingChanged += OnPresetDependentSettingChanged;
+        _stripFoundInRaid.SettingChanged += OnPresetDependentSettingChanged;
         Config.SettingChanged += (_, _) =>
         {
             if (!_suppressEvents) SaveToServerJson();
@@ -154,21 +201,54 @@ public class Plugin : BaseUnityPlugin
             {
                 case DifficultyPreset.Easy:
                     _durabilityLossPercent.Value = 0f;
+                    _durabilityLossVariancePercent.Value = 0f;
+                    _restorePrimaryWeapons.Value = true;
+                    _restoreHolster.Value = true;
+                    _restoreArmorVest.Value = true;
+                    _restoreTacticalVest.Value = true;
+                    _restoreBackpack.Value = true;
+                    _restoreHeadwear.Value = true;
+                    _restoreEarpiece.Value = true;
+                    _restoreFaceCover.Value = true;
+                    _restoreEyewear.Value = true;
                     _keepBackpackItems.Value = true;
                     _keepPocketItems.Value = true;
                     _keepRigItems.Value = true;
+                    _stripFoundInRaid.Value = false;
                     break;
                 case DifficultyPreset.Medium:
                     _durabilityLossPercent.Value = 15f;
+                    _durabilityLossVariancePercent.Value = 5f;
+                    _restorePrimaryWeapons.Value = true;
+                    _restoreHolster.Value = true;
+                    _restoreArmorVest.Value = true;
+                    _restoreTacticalVest.Value = true;
+                    _restoreBackpack.Value = true;
+                    _restoreHeadwear.Value = true;
+                    _restoreEarpiece.Value = true;
+                    _restoreFaceCover.Value = true;
+                    _restoreEyewear.Value = true;
                     _keepBackpackItems.Value = true;
                     _keepPocketItems.Value = true;
                     _keepRigItems.Value = true;
+                    _stripFoundInRaid.Value = false;
                     break;
                 case DifficultyPreset.Hard:
                     _durabilityLossPercent.Value = 30f;
+                    _durabilityLossVariancePercent.Value = 10f;
+                    _restorePrimaryWeapons.Value = true;
+                    _restoreHolster.Value = true;
+                    _restoreArmorVest.Value = true;
+                    _restoreTacticalVest.Value = true;
+                    _restoreBackpack.Value = false;
+                    _restoreHeadwear.Value = true;
+                    _restoreEarpiece.Value = true;
+                    _restoreFaceCover.Value = true;
+                    _restoreEyewear.Value = true;
                     _keepBackpackItems.Value = false;
                     _keepPocketItems.Value = false;
                     _keepRigItems.Value = false;
+                    _stripFoundInRaid.Value = true;
                     break;
             }
             SaveToServerJson();
@@ -244,13 +324,26 @@ public class Plugin : BaseUnityPlugin
             _suppressEvents = true;
             try
             {
+                ReadBool(dict, "ModEnabled", _modEnabled);
+
                 if (dict.TryGetValue("Preset", out var pObj) && pObj is string pStr && Enum.TryParse<DifficultyPreset>(pStr, true, out var parsedPreset))
                     _preset.Value = parsedPreset;
 
                 ReadFloat(dict, "DurabilityLossPercent", _durabilityLossPercent);
+                ReadFloat(dict, "DurabilityLossVariancePercent", _durabilityLossVariancePercent);
                 ReadFloat(dict, "MinDurabilityFloorPercent", _minDurabilityFloorPercent);
                 ReadBool(dict, "AffectMaxDurability", _affectMaxDurability);
                 ReadFloat(dict, "ConsumableResourceLossPercent", _consumableResourceLossPercent);
+
+                ReadBool(dict, "RestorePrimaryWeapons", _restorePrimaryWeapons);
+                ReadBool(dict, "RestoreHolster", _restoreHolster);
+                ReadBool(dict, "RestoreArmorVest", _restoreArmorVest);
+                ReadBool(dict, "RestoreTacticalVest", _restoreTacticalVest);
+                ReadBool(dict, "RestoreBackpack", _restoreBackpack);
+                ReadBool(dict, "RestoreHeadwear", _restoreHeadwear);
+                ReadBool(dict, "RestoreEarpiece", _restoreEarpiece);
+                ReadBool(dict, "RestoreFaceCover", _restoreFaceCover);
+                ReadBool(dict, "RestoreEyewear", _restoreEyewear);
 
                 ReadBool(dict, "KeepBackpackItems", _keepBackpackItems);
                 ReadBool(dict, "KeepPocketItems", _keepPocketItems);
@@ -271,7 +364,7 @@ public class Plugin : BaseUnityPlugin
                 ReadBool(dict, "RestoreSecuredContainer", _restoreSecuredContainer);
                 ReadBool(dict, "OnlyRestoreInsured", _onlyRestoreInsured);
                 ReadBool(dict, "KeepQuestItems", _keepQuestItems);
-                ReadBool(dict, "DeduplicateItems", _deduplicateItems);
+                ReadBool(dict, "StripFoundInRaid", _stripFoundInRaid);
             }
             finally
             {
@@ -309,11 +402,22 @@ public class Plugin : BaseUnityPlugin
 
             var sb = new StringBuilder();
             sb.AppendLine("{");
+            sb.AppendLine($"  \"ModEnabled\": {FmtBool(_modEnabled.Value)},");
             sb.AppendLine($"  \"Preset\": \"{_preset.Value}\",");
             sb.AppendLine($"  \"DurabilityLossPercent\": {FmtFloat(_durabilityLossPercent.Value)},");
+            sb.AppendLine($"  \"DurabilityLossVariancePercent\": {FmtFloat(_durabilityLossVariancePercent.Value)},");
             sb.AppendLine($"  \"MinDurabilityFloorPercent\": {FmtFloat(_minDurabilityFloorPercent.Value)},");
             sb.AppendLine($"  \"AffectMaxDurability\": {FmtBool(_affectMaxDurability.Value)},");
             sb.AppendLine($"  \"ConsumableResourceLossPercent\": {FmtFloat(_consumableResourceLossPercent.Value)},");
+            sb.AppendLine($"  \"RestorePrimaryWeapons\": {FmtBool(_restorePrimaryWeapons.Value)},");
+            sb.AppendLine($"  \"RestoreHolster\": {FmtBool(_restoreHolster.Value)},");
+            sb.AppendLine($"  \"RestoreArmorVest\": {FmtBool(_restoreArmorVest.Value)},");
+            sb.AppendLine($"  \"RestoreTacticalVest\": {FmtBool(_restoreTacticalVest.Value)},");
+            sb.AppendLine($"  \"RestoreBackpack\": {FmtBool(_restoreBackpack.Value)},");
+            sb.AppendLine($"  \"RestoreHeadwear\": {FmtBool(_restoreHeadwear.Value)},");
+            sb.AppendLine($"  \"RestoreEarpiece\": {FmtBool(_restoreEarpiece.Value)},");
+            sb.AppendLine($"  \"RestoreFaceCover\": {FmtBool(_restoreFaceCover.Value)},");
+            sb.AppendLine($"  \"RestoreEyewear\": {FmtBool(_restoreEyewear.Value)},");
             sb.AppendLine($"  \"KeepBackpackItems\": {FmtBool(_keepBackpackItems.Value)},");
             sb.AppendLine($"  \"KeepPocketItems\": {FmtBool(_keepPocketItems.Value)},");
             sb.AppendLine($"  \"KeepRigItems\": {FmtBool(_keepRigItems.Value)},");
@@ -331,7 +435,7 @@ public class Plugin : BaseUnityPlugin
             sb.AppendLine($"  \"RestoreSecuredContainer\": {FmtBool(_restoreSecuredContainer.Value)},");
             sb.AppendLine($"  \"OnlyRestoreInsured\": {FmtBool(_onlyRestoreInsured.Value)},");
             sb.AppendLine($"  \"KeepQuestItems\": {FmtBool(_keepQuestItems.Value)},");
-            sb.AppendLine($"  \"DeduplicateItems\": {FmtBool(_deduplicateItems.Value)}");
+            sb.AppendLine($"  \"StripFoundInRaid\": {FmtBool(_stripFoundInRaid.Value)}");
             sb.AppendLine("}");
 
             if (_watcher != null) _watcher.EnableRaisingEvents = false;

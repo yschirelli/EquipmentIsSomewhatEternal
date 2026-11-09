@@ -315,6 +315,17 @@
     <h1>Equipment Is Somewhat Eternal</h1>
     <p class="tagline">Death retention presets, durability wear, and container cargo settings.</p>
 
+    <!-- Master Switch -->
+    <div class="panel" style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid var(--accent);">
+      <div>
+        <div style="font-weight: 600; font-size: 1.05rem;">Enable Equipment Retention</div>
+        <div style="color: var(--muted); font-size: 0.85rem;">Master toggle. Turn off to restore vanilla Tarkov death behavior.</div>
+      </div>
+      <label class="check-item" style="padding: 0; background: none; border: none; cursor: pointer;">
+        <input type="checkbox" id="ModEnabled" style="width: 1.4rem; height: 1.4rem; accent-color: var(--accent);">
+      </label>
+    </div>
+
     <form id="cfg-form">
       <!-- 1. Presets -->
       <div class="section-title">Difficulty Presets</div>
@@ -358,6 +369,15 @@
 
         <div class="slider-box">
           <div class="slider-head">
+            <span class="slider-label">Durability Loss Random Variance (+/-)</span>
+            <span class="slider-val" id="variance-val">0%</span>
+          </div>
+          <p class="slider-sub">Adds unpredictable combat damage variation (+/- % of base penalty) across items.</p>
+          <input type="range" id="DurabilityLossVariancePercent" min="0" max="50" step="1" value="0">
+        </div>
+
+        <div class="slider-box">
+          <div class="slider-head">
             <span class="slider-label">Minimum Durability Floor</span>
             <span class="slider-val" id="floor-val">10%</span>
           </div>
@@ -373,7 +393,78 @@
         </div>
       </div>
 
-      <!-- 3. Container rules -->
+      <!-- 3. Equipped Slots -->
+      <div class="section-title">Equipped Slot Protection</div>
+      <div class="panel">
+        <p class="slider-sub" style="margin-top: 0; margin-bottom: 1rem;">Choose which equipped gear slots are kept on death.</p>
+        <div class="check-grid">
+          <label class="check-item">
+            <input type="checkbox" id="RestorePrimaryWeapons">
+            <span class="check-text">
+              <span class="check-title">Primary Weapons</span>
+              <span class="check-desc">Primary rifle &amp; secondary long gun.</span>
+            </span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" id="RestoreHolster">
+            <span class="check-text">
+              <span class="check-title">Sidearm / Holster</span>
+              <span class="check-desc">Equipped pistol or revolver.</span>
+            </span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" id="RestoreArmorVest">
+            <span class="check-text">
+              <span class="check-title">Body Armor Vest</span>
+              <span class="check-desc">Equipped body armor &amp; plates.</span>
+            </span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" id="RestoreTacticalVest">
+            <span class="check-text">
+              <span class="check-title">Tactical Chest Rig</span>
+              <span class="check-desc">Equipped chest rig / armored rig.</span>
+            </span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" id="RestoreBackpack">
+            <span class="check-text">
+              <span class="check-title">Backpack</span>
+              <span class="check-desc">Equipped backpack itself.</span>
+            </span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" id="RestoreHeadwear">
+            <span class="check-text">
+              <span class="check-title">Headwear</span>
+              <span class="check-desc">Helmet, cap, or beret.</span>
+            </span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" id="RestoreEarpiece">
+            <span class="check-text">
+              <span class="check-title">Headset / Earpiece</span>
+              <span class="check-desc">Tactical electronic headset.</span>
+            </span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" id="RestoreFaceCover">
+            <span class="check-text">
+              <span class="check-title">Face Cover</span>
+              <span class="check-desc">Balaclava, half-mask, or scarf.</span>
+            </span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" id="RestoreEyewear">
+            <span class="check-text">
+              <span class="check-title">Eyewear</span>
+              <span class="check-desc">Glasses or tactical goggles.</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 4. Container rules -->
       <div class="section-title">Pre-Raid Container Inventory</div>
       <div class="panel">
         <p class="slider-sub" style="margin-top: 0; margin-bottom: 1rem;">Choose which containers keep the items you entered the raid with.</p>
@@ -494,6 +585,13 @@
               </span>
             </label>
             <label class="check-item">
+              <input type="checkbox" id="StripFoundInRaid">
+              <span class="check-text">
+                <span class="check-title">Strip Found-in-Raid On Restore</span>
+                <span class="check-desc">Remove Found-in-Raid checkmarks from saved items upon death.</span>
+              </span>
+            </label>
+            <label class="check-item">
               <input type="checkbox" id="RestoreArmBand">
               <span class="check-text">
                 <span class="check-title">Restore Armband</span>
@@ -521,13 +619,6 @@
                 <span class="check-desc">Revert pouch contents to pre-raid snapshot (uncheck to keep raid pouch).</span>
               </span>
             </label>
-            <label class="check-item">
-              <input type="checkbox" id="DeduplicateItems">
-              <span class="check-text">
-                <span class="check-title">Deduplicate Moved Items</span>
-                <span class="check-desc">Generate fresh IDs for restored items to avoid collisions with items moved during raid.</span>
-              </span>
-            </label>
           </div>
         </div>
       </details>
@@ -551,15 +642,18 @@
 
     const sliders = [
       { id: 'DurabilityLossPercent', out: 'loss-val' },
+      { id: 'DurabilityLossVariancePercent', out: 'variance-val' },
       { id: 'MinDurabilityFloorPercent', out: 'floor-val' },
       { id: 'ConsumableResourceLossPercent', out: 'drain-val' }
     ];
 
     const checkboxes = [
+      'ModEnabled',
       'AffectMaxDurability',
+      'RestorePrimaryWeapons', 'RestoreHolster', 'RestoreArmorVest', 'RestoreTacticalVest', 'RestoreBackpack', 'RestoreHeadwear', 'RestoreEarpiece', 'RestoreFaceCover', 'RestoreEyewear',
       'KeepBackpackItems', 'KeepPocketItems', 'KeepRigItems',
       'KeepKeys', 'KeepMeds', 'KeepAmmo', 'KeepMagazines', 'KeepProvisions', 'KeepGrenades', 'KeepMoney', 'KeepBarterItems',
-      'OnlyRestoreInsured', 'KeepQuestItems', 'RestoreArmBand', 'RestoreSpecialSlots', 'RestoreScabbard', 'RestoreSecuredContainer', 'DeduplicateItems'
+      'OnlyRestoreInsured', 'KeepQuestItems', 'StripFoundInRaid', 'RestoreArmBand', 'RestoreSpecialSlots', 'RestoreScabbard', 'RestoreSecuredContainer'
     ];
 
     function updateSlider(s) {
@@ -616,19 +710,52 @@
       isInternalUpdate = true;
       if (p === 'Easy') {
         document.getElementById('DurabilityLossPercent').value = 0;
+        document.getElementById('DurabilityLossVariancePercent').value = 0;
+        document.getElementById('RestorePrimaryWeapons').checked = true;
+        document.getElementById('RestoreHolster').checked = true;
+        document.getElementById('RestoreArmorVest').checked = true;
+        document.getElementById('RestoreTacticalVest').checked = true;
+        document.getElementById('RestoreBackpack').checked = true;
+        document.getElementById('RestoreHeadwear').checked = true;
+        document.getElementById('RestoreEarpiece').checked = true;
+        document.getElementById('RestoreFaceCover').checked = true;
+        document.getElementById('RestoreEyewear').checked = true;
         document.getElementById('KeepBackpackItems').checked = true;
         document.getElementById('KeepPocketItems').checked = true;
         document.getElementById('KeepRigItems').checked = true;
+        document.getElementById('StripFoundInRaid').checked = false;
       } else if (p === 'Medium') {
         document.getElementById('DurabilityLossPercent').value = 15;
+        document.getElementById('DurabilityLossVariancePercent').value = 5;
+        document.getElementById('RestorePrimaryWeapons').checked = true;
+        document.getElementById('RestoreHolster').checked = true;
+        document.getElementById('RestoreArmorVest').checked = true;
+        document.getElementById('RestoreTacticalVest').checked = true;
+        document.getElementById('RestoreBackpack').checked = true;
+        document.getElementById('RestoreHeadwear').checked = true;
+        document.getElementById('RestoreEarpiece').checked = true;
+        document.getElementById('RestoreFaceCover').checked = true;
+        document.getElementById('RestoreEyewear').checked = true;
         document.getElementById('KeepBackpackItems').checked = true;
         document.getElementById('KeepPocketItems').checked = true;
         document.getElementById('KeepRigItems').checked = true;
+        document.getElementById('StripFoundInRaid').checked = false;
       } else if (p === 'Hard') {
         document.getElementById('DurabilityLossPercent').value = 30;
+        document.getElementById('DurabilityLossVariancePercent').value = 10;
+        document.getElementById('RestorePrimaryWeapons').checked = true;
+        document.getElementById('RestoreHolster').checked = true;
+        document.getElementById('RestoreArmorVest').checked = true;
+        document.getElementById('RestoreTacticalVest').checked = true;
+        document.getElementById('RestoreBackpack').checked = false;
+        document.getElementById('RestoreHeadwear').checked = true;
+        document.getElementById('RestoreEarpiece').checked = true;
+        document.getElementById('RestoreFaceCover').checked = true;
+        document.getElementById('RestoreEyewear').checked = true;
         document.getElementById('KeepBackpackItems').checked = false;
         document.getElementById('KeepPocketItems').checked = false;
         document.getElementById('KeepRigItems').checked = false;
+        document.getElementById('StripFoundInRaid').checked = true;
       }
       sliders.forEach(updateSlider);
       updateWhitelistAvailability();
