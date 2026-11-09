@@ -9,6 +9,8 @@
     <RootNamespace>EquipmentIsEternal</RootNamespace>
     <OutputPath>bin\$(Configuration)\$(ProjectName)\$(AssemblyName)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+    <NoWarn>$(NoWarn);NU1900</NoWarn>
   </PropertyGroup>
   <ItemGroup Condition="$(NETCoreSdkVersion.StartsWith('9.'))">
     <KnownFrameworkReference Include="Microsoft.NETCore.App"
